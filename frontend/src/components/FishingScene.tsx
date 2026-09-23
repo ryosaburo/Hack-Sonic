@@ -45,6 +45,7 @@ export function FishingScene() {
     prevReelMode: 'tap' as 'tap' | 'hold',
     prevTelegraph: false,
     clickAccumulator: 0,
+    pullTimer: 0,
   });
 
   const phase = useGameStore((s) => s.phase);
@@ -166,20 +167,36 @@ export function FishingScene() {
       if (state.phase === 'idle') {
         targetLureX = ROD_TIP.x;
         targetLureY = ROD_TIP.y;
-      } else if (state.phase === 'cast' || state.phase === 'waiting_bite' || state.phase === 'reeling') {
+      } else if (state.phase === 'reeling') {
+        // 常時の低周波なゆらぎ（体力が高い＝魚が元気なほど大きく暴れる）
         const tensionFrac = Math.max(0.15, state.gauge / 100);
-        const wiggle =
-          state.phase === 'reeling'
-            ? organicResistance(t, 18) * (1 - tensionFrac * 0.5)
-            : 0;
-        targetLureX = CATCH_POINT.x + wiggle;
-        targetLureY = CATCH_POINT.y + (state.phase === 'reeling' ? Math.sin(t * 3.1) * 8 : Math.sin(t * 0.8) * 4);
+        const driftX = organicResistance(t, 10) * (0.4 + tensionFrac * 0.4);
+        const driftY = organicResistance(t * 0.87 + 4.2, 8) * (0.4 + tensionFrac * 0.4);
+        targetLureX = CATCH_POINT.x + driftX;
+        targetLureY = CATCH_POINT.y + driftY;
+
+        // 一定間隔で「グッ」と引かれる力積を速度に直接加える（引っ張られている実感）
+        e.pullTimer -= dt;
+        if (e.pullTimer <= 0) {
+          const angle = Math.random() * Math.PI * 2;
+          const strength = (70 + Math.random() * 70) * (0.5 + tensionFrac * 0.5);
+          e.lureVX += Math.cos(angle) * strength;
+          e.lureVY += Math.sin(angle) * strength * 0.5;
+          e.shake.add(0.04 + tensionFrac * 0.06);
+          e.pullTimer = 0.35 + Math.random() * 0.55;
+        }
+      } else if (state.phase === 'cast' || state.phase === 'waiting_bite') {
+        targetLureX = CATCH_POINT.x;
+        targetLureY = CATCH_POINT.y + Math.sin(t * 0.8) * 4;
       } else {
         targetLureX = ROD_TIP.x;
         targetLureY = ROD_TIP.y - 40;
       }
-      [e.lureX, e.lureVX] = springTo(e.lureX, targetLureX, e.lureVX, 40, 8, dt);
-      [e.lureY, e.lureVY] = springTo(e.lureY, targetLureY, e.lureVY, 40, 8, dt);
+      // 巻き上げ中はバネを柔らかく(damping低め)して、力積による揺り戻しが起きやすいようにする
+      const lureStiffness = state.phase === 'reeling' ? 55 : 40;
+      const lureDamping = state.phase === 'reeling' ? 6 : 8;
+      [e.lureX, e.lureVX] = springTo(e.lureX, targetLureX, e.lureVX, lureStiffness, lureDamping, dt);
+      [e.lureY, e.lureVY] = springTo(e.lureY, targetLureY, e.lureVY, lureStiffness, lureDamping, dt);
 
       // 竿先のしなり（ゲージ変化に応じて瞬間移動させず追従させる）
       const rodTargetY = state.phase === 'reeling' ? ROD_TIP.y + (100 - state.gauge) * 0.3 : ROD_TIP.y;
@@ -189,6 +206,10 @@ export function FishingScene() {
       if (state.phase === 'idle') {
         e.camera.targetX = Math.sin(t * 0.05) * 10;
         e.camera.targetY = Math.sin(t * 0.037) * 6;
+      } else if (state.phase === 'reeling') {
+        // 暴れるルアー（魚）の位置をカメラが追いかけることで、引かれている実感を強める
+        e.camera.targetX = e.lureX;
+        e.camera.targetY = e.lureY - 20;
       }
       const shakeOffset = e.shake.update(dt, t);
 
