@@ -150,6 +150,7 @@ export function Zukan() {
 
       {replayEntry && (
         <GyotakuReveal
+          key={replayEntry.id}
           entry={replayEntry}
           doneLabel="閉じる"
           onDone={() => setReplayId(null)}

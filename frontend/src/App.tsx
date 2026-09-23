@@ -25,6 +25,7 @@ function App() {
 
       {phase === 'gyotaku' && currentEntry && (
         <GyotakuReveal
+          key={currentEntry.id}
           entry={currentEntry}
           doneLabel="海に戻る"
           registeredNote={isNewSpecies ? '図鑑に登録されました' : undefined}

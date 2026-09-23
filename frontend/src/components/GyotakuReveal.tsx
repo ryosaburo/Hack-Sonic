@@ -26,9 +26,9 @@ export function GyotakuReveal({ entry, doneLabel, onDone, registeredNote }: Gyot
   const rarity = entry.rarity;
   const total = TOTAL_DURATION_MS[rarity];
 
+  // 呼び出し側がentry.idをkeyに渡して天体ごとに再マウントする前提なので、
+  // ここでは初回タイマーのセットだけを行う(stateのリセットはしない)。
   useEffect(() => {
-    setStep(0);
-    setSkipped(false);
     const t1 = window.setTimeout(() => setStep(1), total * 0.25);
     const t2 = window.setTimeout(() => setStep(2), total * 0.5);
     const t3 = window.setTimeout(() => setStep(3), total * 0.85);
@@ -37,7 +37,7 @@ export function GyotakuReveal({ entry, doneLabel, onDone, registeredNote }: Gyot
       window.clearTimeout(t2);
       window.clearTimeout(t3);
     };
-  }, [entry.id, total]);
+  }, [total]);
 
   const particles = useMemo(
     () =>
