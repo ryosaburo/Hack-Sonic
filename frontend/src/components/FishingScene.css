@@ -1,0 +1,147 @@
+.fishing-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.scene-canvas-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.scene-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.idle-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  text-align: center;
+  pointer-events: none;
+}
+
+.title-logo {
+  font-size: clamp(1.8rem, 6vw, 3rem);
+  letter-spacing: 0.15em;
+  color: #eaf2ff;
+  text-shadow: 0 0 24px rgba(140, 180, 255, 0.6);
+  margin: 0;
+}
+
+.title-sub {
+  color: #a9b8d9;
+  margin: 0 0 1rem;
+}
+
+.cast-button {
+  pointer-events: auto;
+  background: linear-gradient(180deg, #ffe9b3, #f2c14e);
+  color: #3a2c0a;
+  border: none;
+  border-radius: 999px;
+  padding: 0.9rem 2.2rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(242, 193, 78, 0.35);
+}
+.cast-button:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.wait-hint {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #cfe0ff;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+.reel-hud {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  transform: translateX(-50%);
+  width: min(420px, 86%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.gauge-bar,
+.time-bar {
+  position: relative;
+  width: 100%;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.time-bar {
+  height: 6px;
+}
+
+.gauge-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff7b7b, #ffd76b);
+  transition: width 0.08s linear;
+}
+
+.time-bar-fill {
+  height: 100%;
+  background: #7bc8ff;
+  transition: width 0.08s linear;
+}
+
+.gauge-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: #1a1a1a;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+.phase-icon {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.1em;
+  padding: 0.3rem 1rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.phase-icon.telegraph {
+  animation: phase-shake 0.15s infinite;
+  color: #ffd76b;
+  border-color: #ffd76b;
+}
+
+@keyframes phase-shake {
+  0% { transform: translateX(-3px) rotate(-2deg); }
+  50% { transform: translateX(3px) rotate(2deg); }
+  100% { transform: translateX(-3px) rotate(-2deg); }
+}

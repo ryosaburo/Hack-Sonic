@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <radialGradient id="g-ryugu_touchdown" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#6b6b6b"/>
+      <stop offset="55%" stop-color="#403f3f"/>
+      <stop offset="100%" stop-color="#1a1a1a"/>
+    </radialGradient>
+    <radialGradient id="glow-ryugu_touchdown" cx="50%" cy="50%" r="50%">
+      <stop offset="80%" stop-color="#ff8844" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#ff8844" stop-opacity="0.25"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="400" fill="#05060f"/>
+  
+  <circle cx="200" cy="200" r="150" fill="url(#g-ryugu_touchdown)"/>
+  <circle cx="200.0" cy="310.0" r="8" fill="#1a1a1a" opacity="0.35"/><circle cx="140.7" cy="154.6" r="13" fill="#1a1a1a" opacity="0.35"/><circle cx="100.1" cy="127.5" r="18" fill="#1a1a1a" opacity="0.35"/><circle cx="91.0" cy="305.3" r="23" fill="#1a1a1a" opacity="0.35"/><circle cx="116.3" cy="185.5" r="28" fill="#1a1a1a" opacity="0.35"/><circle cx="167.9" cy="106.7" r="8" fill="#1a1a1a" opacity="0.35"/>
+  <circle cx="200" cy="200" r="150" fill="url(#glow-ryugu_touchdown)"/>
+</svg>

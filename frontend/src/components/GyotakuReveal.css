@@ -1,0 +1,148 @@
+.gyotaku-backdrop {
+  cursor: pointer;
+}
+
+.gyotaku-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 2rem;
+  border-radius: 18px;
+  background: radial-gradient(circle at 30% 20%, #171a2e, #05060f);
+  border: 3px solid #6b5a3a;
+  overflow: hidden;
+  animation: lift-up 0.4s ease;
+}
+
+@keyframes lift-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.gyotaku-card.rarity-rare { border-color: #d4af37; }
+.gyotaku-card.rarity-super_rare {
+  border-color: #e0b0ff;
+  border-width: 4px;
+  box-shadow: 0 0 40px rgba(224, 176, 255, 0.25);
+}
+.gyotaku-card.rarity-legendary {
+  border-color: #ffd76b;
+  border-width: 5px;
+  box-shadow: 0 0 60px rgba(255, 215, 107, 0.35);
+}
+
+.gyotaku-image-frame {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+
+.gyotaku-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0);
+  transition: filter 0.9s ease;
+}
+
+.step-0 .gyotaku-image {
+  filter: brightness(0);
+}
+
+.step-1 .gyotaku-image {
+  filter: grayscale(1) sepia(0.65) brightness(0.9);
+}
+
+.step-2 .gyotaku-image,
+.step-3 .gyotaku-image {
+  filter: none;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  animation: diagonal-wipe 0.9s ease forwards;
+}
+
+@keyframes diagonal-wipe {
+  from { clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); }
+  to { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+}
+
+.stamp-frame {
+  position: absolute;
+  inset: 6px;
+  border: 3px solid rgba(255, 255, 255, 0.55);
+  border-radius: 8px;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.step-1 .stamp-frame,
+.step-2 .stamp-frame,
+.step-3 .stamp-frame {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.gyotaku-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  animation: fade-in 0.3s ease;
+}
+
+.gyotaku-info .body-name {
+  font-size: 1.3rem;
+  color: #fff;
+  margin: 0.2rem 0 0;
+}
+
+.gyotaku-info .mission-name {
+  color: #b9c6e6;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.gyotaku-info .capture-date,
+.gyotaku-info .credit-text {
+  color: #8b9ac2;
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.registered-note {
+  color: #ffd76b;
+  font-size: 0.85rem;
+  margin: 0.3rem 0;
+}
+
+.skip-hint {
+  color: #6f7ea6;
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+.particle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ffd76b;
+  opacity: 0;
+  animation: particle-drift 1.4s ease-in infinite;
+  pointer-events: none;
+}
+
+.rarity-rare .particle { background: #d4af37; }
+.rarity-super_rare .particle { background: #e0b0ff; }
+.rarity-legendary .particle { background: #ffd76b; }
+
+@keyframes particle-drift {
+  0% { opacity: 0; transform: translateY(0) scale(0.6); }
+  30% { opacity: 0.9; }
+  100% { opacity: 0; transform: translateY(-40px) scale(1.2); }
+}

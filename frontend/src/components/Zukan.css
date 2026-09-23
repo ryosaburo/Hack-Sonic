@@ -1,0 +1,198 @@
+.zukan-screen {
+  position: absolute;
+  inset: 0;
+  background: #05060f;
+  color: #eaf2ff;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem clamp(1rem, 4vw, 2.5rem);
+  overflow-y: auto;
+  z-index: 5;
+}
+
+.zukan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.zukan-header h2 {
+  margin: 0;
+  letter-spacing: 0.1em;
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #eaf2ff;
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+}
+
+.zukan-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0.8rem 0;
+}
+
+.zukan-progress-bar {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.zukan-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7bc8ff, #ffd76b);
+}
+
+.zukan-progress-label {
+  font-size: 0.8rem;
+  color: #9fb3d9;
+  white-space: nowrap;
+}
+
+.zukan-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.filter-chip {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: #cfd6e6;
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.filter-chip.active {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.zukan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.7rem;
+  padding-bottom: 1.5rem;
+}
+
+.zukan-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.6rem;
+  cursor: pointer;
+  color: #cfd6e6;
+}
+
+.zukan-card.collected.rarity-rare { border-color: rgba(212, 175, 55, 0.5); }
+.zukan-card.collected.rarity-super_rare { border-color: rgba(224, 176, 255, 0.5); }
+.zukan-card.collected.rarity-legendary { border-color: rgba(255, 215, 107, 0.6); }
+
+.zukan-no {
+  font-size: 0.65rem;
+  color: #6f7ea6;
+  align-self: flex-start;
+}
+
+.zukan-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #000;
+}
+
+.silhouette-thumb {
+  background: #000;
+}
+
+.zukan-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.zukan-mission {
+  font-size: 0.65rem;
+  color: #9fb3d9;
+}
+
+.zukan-badge {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.hint-card,
+.detail-card {
+  background: radial-gradient(circle at 30% 20%, #171a2e, #05060f);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 1.4rem;
+  max-width: 320px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  text-align: center;
+}
+
+.hint-title {
+  color: #cfd6e6;
+  margin: 0;
+}
+
+.hint-stars {
+  color: #ffd76b;
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+.hint-desc {
+  color: #8b9ac2;
+  font-size: 0.85rem;
+  margin: 0 0 0.6rem;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.detail-image {
+  width: 180px;
+  height: 180px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: #000;
+}
+
+.detail-dates,
+.flavor-text {
+  color: #9fb3d9;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.flavor-text {
+  color: #cfd6e6;
+  line-height: 1.5;
+}
