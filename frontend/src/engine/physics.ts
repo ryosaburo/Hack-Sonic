@@ -104,6 +104,7 @@ export class ShakeController {
 
 // 無重力の釣り糸：下へ垂れず、たるんだ分は糸に沿って波打ちながらゆっくりうねる。
 // slack=0で一直線（張っている）、大きいほど大きくうねる。
+// さらに天の川の流れ（恒星風）に晒されて、中間点が微弱にそよぐ。
 export function drawFishingLine(
   ctx: CanvasRenderingContext2D,
   rodTip: Vec2,
@@ -127,7 +128,12 @@ export function drawFishingLine(
       0.3 * Math.sin(Math.PI * 4.6 * s - t * 1.1 + 1.3) +
       0.15 * Math.sin(t * 0.35 + 2.1);
     const off = slack * envelope * wave;
-    ctx.lineTo(rodTip.x + dx * s + nx * off, rodTip.y + dy * s + ny * off);
+    const px = rodTip.x + dx * s + nx * off;
+    const py = rodTip.y + dy * s + ny * off;
+    // 両端（竿先・ルアー）は固定し、中間点ほど強く風を受ける
+    const wind = stellarWind(px, py, t);
+    const windEnvelope = Math.pow(envelope, 1.5);
+    ctx.lineTo(px + wind.x * windEnvelope, py + wind.y * windEnvelope);
   }
   ctx.strokeStyle = 'rgba(255,255,255,0.6)';
   ctx.lineWidth = 1.5;
@@ -254,6 +260,28 @@ const NEBULA_CELL = 240;
 const RIVER_STAR_CELL = 160;
 const RIVER_FLOW_SPEED = 14;
 
+// 天の川の流れの位相（流れに沿った移動量）。星の流れと恒星風のうねりが同じ値を参照して同期する。
+export function riverFlowPhase(t: number): number {
+  return t * RIVER_FLOW_SPEED;
+}
+
+// 恒星風（プラズマの流れ）：天の川の流れに乗って伝わる微弱なサイン波。
+// 流れの位相から波の位相を決めるので、うねりの山は星と同じ速さで下流へ運ばれていく。
+// 向きは川の接線方向、強さは本流ほど強く、外縁の闇でもわずかに残る。
+const STELLAR_WIND_AMPLITUDE = 5;
+const STELLAR_WIND_WAVELENGTH = 90;
+const STELLAR_WIND_RIPPLE = 140;
+
+export function stellarWind(x: number, y: number, t: number): Vec2 {
+  const phase = ((x - riverFlowPhase(t)) / STELLAR_WIND_WAVELENGTH) * Math.PI * 2 + y / STELLAR_WIND_RIPPLE;
+  const gust = Math.sin(phase) * 0.7 + Math.sin(phase * 1.9 + t * 1.3) * 0.3;
+  const strength = STELLAR_WIND_AMPLITUDE * (0.3 + 0.7 * Math.min(1, milkyWayDensity(x, y))) * gust;
+  // 川の中心線の傾きから接線ベクトルを求める
+  const slope = (riverCenterY(x + 1) - riverCenterY(x - 1)) / 2;
+  const tangentLen = Math.hypot(1, slope);
+  return { x: strength / tangentLen, y: (strength * slope) / tangentLen };
+}
+
 // 天の川本体（ワールド座標で描画するので camera.apply の後に呼ぶ）
 export function drawMilkyWay(ctx: CanvasRenderingContext2D, camera: Camera, w: number, h: number, t: number) {
   const margin = 400;
@@ -285,7 +313,7 @@ export function drawMilkyWay(ctx: CanvasRenderingContext2D, camera: Camera, w: n
   ctx.restore();
 
   // 川の流れに沿ってゆっくり流れる星々（密度は固定座標で評価するので川の形は動かない）
-  const flow = t * RIVER_FLOW_SPEED;
+  const flow = riverFlowPhase(t);
   ctx.fillStyle = '#ffffff';
   for (let ix = Math.floor((x0 - flow) / RIVER_STAR_CELL); ix <= Math.floor((x1 - flow) / RIVER_STAR_CELL); ix++) {
     for (let iy = Math.floor(y0 / RIVER_STAR_CELL); iy <= Math.floor(y1 / RIVER_STAR_CELL); iy++) {
