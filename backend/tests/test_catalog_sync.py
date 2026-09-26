@@ -47,6 +47,7 @@ def test_point_migration_sync_and_new_species_preserve_progress(tmp_path, monkey
     with isolated.begin() as conn:
         conn.execute(text('ALTER TABLE catalog DROP COLUMN point'))
         conn.execute(text('ALTER TABLE wallet DROP COLUMN test_grant_applied'))
+        conn.execute(text('ALTER TABLE wallet DROP COLUMN equipped'))
         conn.execute(text("INSERT INTO users (device_id, created_at) VALUES ('legacy-user', '2026-01-01T00:00:00')"))
         conn.execute(text("INSERT INTO wallet (user_id, balance, inventory) VALUES (1, 42, '{}')"))
     monkeypatch.setattr(database, 'engine', isolated)
@@ -54,6 +55,7 @@ def test_point_migration_sync_and_new_species_preserve_progress(tmp_path, monkey
     with Session(isolated) as session:
         assert session.get(Wallet, 1).balance == 42
         assert session.get(Wallet, 1).test_grant_applied is False
+        assert session.get(Wallet, 1).equipped == {}
     seed = json.loads(CATALOG_SEED_PATH.read_text())
     seed[0]['point'] = 23
     seed.append({**seed[0], 'id': 'new_constellation', 'point': 47})

@@ -81,8 +81,8 @@ def cast_start(
             raise HTTPException(409, "no catalog entry for rarity")
         if body.use_lure:
             wallet.inventory = {**wallet.inventory, "lure": wallet.inventory["lure"] - 1}
-        seconds = PRODUCTS["time_extension"]["extra_seconds"] if wallet.inventory.get("time_extension") else 0
-        damage = PRODUCTS["power_reel"]["damage_multiplier"] if wallet.inventory.get("power_reel") else 1
+        seconds = PRODUCTS["time_extension"]["extra_seconds"] if wallet.inventory.get("time_extension") and wallet.equipped.get("time_extension") else 0
+        damage = PRODUCTS["power_reel"]["damage_multiplier"] if wallet.inventory.get("power_reel") and wallet.equipped.get("power_reel") else 1
         result = CastStartResponse(
             attempt_id=attempt_id, rarity=rarity, time_limit=RARITY_TIME_LIMIT[rarity] + seconds,
             damage_multiplier=damage, economy=wallet_public(wallet),
