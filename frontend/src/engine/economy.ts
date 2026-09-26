@@ -11,14 +11,19 @@ export interface Product {
   id: string; name: string; kind: string; price: number; description: string;
   rarity_multipliers?: number[]; extra_seconds?: number; damage_multiplier?: number;
 }
-export interface Economy { balance: number; inventory: Record<string, number>; spots: Spot[] }
+export interface Economy {
+  balance: number;
+  inventory: Record<string, number>;
+  equipped: Record<string, boolean>;
+  spots: Spot[];
+}
 // TODO: catalog.json の point 確定後、shop.mock.json の価格・効果量をbackendと同期して調整する。
 export const MOCK_PRODUCTS: Product[] = shop.products;
-export const EMPTY_ECONOMY: Economy = { balance: 0, inventory: {}, spots: [] };
+export const EMPTY_ECONOMY: Economy = { balance: 0, inventory: {}, equipped: {}, spots: [] };
 export const RARITY_WEIGHTS: Record<Rarity, number> = { common: 70, rare: 20, super_rare: 8, legendary: 2 };
 export const inSpot = (spot: Spot, x: number, y: number) => x >= spot.x_min && x <= spot.x_max && y >= spot.y_min && y <= spot.y_max;
-export function mockEconomy(balance: number, inventory: Record<string, number>): Economy {
-  return { balance, inventory, spots: shop.spots.filter(s => inventory[s.id] > 0) };
+export function mockEconomy(balance: number, inventory: Record<string, number>, equipped: Record<string, boolean>): Economy {
+  return { balance, inventory, equipped, spots: shop.spots.filter(s => inventory[s.id] > 0) };
 }
 // 天体ごとの「釣れやすい場所」の開示価格（レア度別）。交換所の商品一覧には出さない
 export type CatchArea = NonNullable<CatchBonus['area']>;

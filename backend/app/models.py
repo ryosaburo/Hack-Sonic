@@ -104,6 +104,7 @@ class Wallet(SQLModel, table=True):
     balance: int = 0
     test_grant_applied: bool = False
     inventory: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
+    equipped: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
 
 
 class CastAttempt(SQLModel, table=True):
@@ -126,6 +127,11 @@ class Exchange(SQLModel, table=True):
 class ExchangeRequest(SQLModel):
     request_id: str = Field(min_length=1, max_length=100)
     product_id: str
+
+
+class EquipmentRequest(SQLModel):
+    product_id: Literal["time_extension", "power_reel"]
+    equipped: bool
 
 
 class AreaRevealRequest(SQLModel):

@@ -23,6 +23,7 @@ type PendingAction = (
   | { kind: 'resolve'; body: api.CastResolveRequest }
   | { kind: 'decision'; body: { attempt_id: string; decision: 'keep' | 'release' } }
   | { kind: 'exchange'; body: { request_id: string; product_id: string } }
+  | { kind: 'equipment'; body: { product_id: 'time_extension' | 'power_reel'; equipped: boolean } }
   | { kind: 'reveal'; body: { request_id: string; species_id: string } }
 ) & { context: Context };
 
@@ -40,7 +41,9 @@ interface GameState extends Context {
   triggerBite: () => void; pressStart: () => void; pressEnd: () => void; tickReel: (dt: number) => void;
   keepGyotaku: () => void; releaseCatch: () => void; returnToIdle: () => void;
   openZukan: () => void; closeZukan: () => void; openShop: () => void; closeShop: () => void;
-  setUseLure: (use: boolean) => void; buy: (id: string) => Promise<void>; revealArea: (speciesId: string) => Promise<void>;
+  setUseLure: (use: boolean) => void; buy: (id: string) => Promise<void>;
+  setEquipment: (id: 'time_extension' | 'power_reel', equipped: boolean) => Promise<void>;
+  revealArea: (speciesId: string) => Promise<void>;
   retryPending: () => Promise<void>; dismissError: () => void;
   _run: (pending: PendingAction) => Promise<void>;
   _resolve: (success: boolean) => Promise<void>;
@@ -68,9 +71,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (!pending) {
         const saved = readSaved<{ economy: Economy; collection: Record<string, CollectionRecord>; testGrantApplied?: boolean }>(MOCK_KEY);
         const collection = saved?.collection ?? {};
-        let economy = saved?.economy ?? EMPTY_ECONOMY;
+        const previousEconomy = saved?.economy ?? EMPTY_ECONOMY;
+        let economy = mockEconomy(previousEconomy.balance, previousEconomy.inventory, previousEconomy.equipped ?? {});
         if (mockTestPoints > 0 && !saved?.testGrantApplied) {
-          economy = mockEconomy(economy.balance + mockTestPoints, economy.inventory);
+          economy = mockEconomy(economy.balance + mockTestPoints, economy.inventory, economy.equipped);
           save(MOCK_KEY, { economy, collection, testGrantApplied: true });
         }
         set({ usingBackend: false, ready: true, economy, collection, catalog: mockCatalog, products: MOCK_PRODUCTS, areas: mockAreas(mockCatalog, economy.inventory) });
@@ -103,8 +107,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       const entry = drawMock(s.catalog, s.season, x, y, s.useLure);
       const inventory = { ...s.economy.inventory };
       if (s.useLure) inventory.lure--;
-      set({ economy: mockEconomy(s.economy.balance, inventory), error: null });
-      get()._begin(entry, RARITY_CONFIG[entry.rarity].timeLimit + (inventory.time_extension ? MOCK_PRODUCTS.find(p => p.id === 'time_extension')!.extra_seconds! : 0), inventory.power_reel ? MOCK_PRODUCTS.find(p => p.id === 'power_reel')!.damage_multiplier! : 1, null);
+      set({ economy: mockEconomy(s.economy.balance, inventory, s.economy.equipped), error: null });
+      get()._begin(entry, RARITY_CONFIG[entry.rarity].timeLimit + (inventory.time_extension && s.economy.equipped.time_extension ? MOCK_PRODUCTS.find(p => p.id === 'time_extension')!.extra_seconds! : 0), inventory.power_reel && s.economy.equipped.power_reel ? MOCK_PRODUCTS.find(p => p.id === 'power_reel')!.damage_multiplier! : 1, null);
     }
   },
   triggerBite: () => {
@@ -175,7 +179,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const points = success && existing ? s.currentEntry.point : 0;
     set({ phase: 'result', lastResultSuccess: success, isNewSpecies: success && !existing,
       catchCount: success ? (existing?.catch_count ?? 0) + 1 : 0, earnedPoints: points,
-      economy: mockEconomy(s.economy.balance + points, s.economy.inventory),
+      economy: mockEconomy(s.economy.balance + points, s.economy.inventory, s.economy.equipped),
       collection: success && existing ? { ...s.collection, [s.currentEntry.id]: { ...existing, catch_count: existing.catch_count + 1 } } : s.collection });
   },
   keepGyotaku: () => {
@@ -209,7 +213,16 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     const product = s.products.find(p => p.id === id);
     if (!product || s.economy.balance < product.price || (product.kind !== 'consumable' && s.economy.inventory[id])) return;
-    set({ economy: mockEconomy(s.economy.balance - product.price, { ...s.economy.inventory, [id]: (s.economy.inventory[id] ?? 0) + 1 }) });
+    set({ economy: mockEconomy(s.economy.balance - product.price, { ...s.economy.inventory, [id]: (s.economy.inventory[id] ?? 0) + 1 }, s.economy.equipped) });
+  },
+  setEquipment: async (id, equipped) => {
+    const s = get();
+    if (s.phase !== 'shop' || s.busy || s.pending || !s.economy.inventory[id]) return;
+    if (s.usingBackend) {
+      await get()._run({ kind: 'equipment', body: { product_id: id, equipped }, context: contextOf(s) });
+    } else {
+      set({ economy: mockEconomy(s.economy.balance, s.economy.inventory, { ...s.economy.equipped, [id]: equipped }) });
+    }
   },
   // 図鑑から、天体ごとの「釣れやすい場所」をポイントで開示する（rare以上のみ）
   revealArea: async speciesId => {
@@ -223,7 +236,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const price = entry && AREA_INFO_PRICES[entry.rarity];
     const area = entry?.catch_bonus?.area;
     if (!price || !area || s.economy.balance < price) return;
-    set({ economy: mockEconomy(s.economy.balance - price, { ...s.economy.inventory, [areaInfoKey(speciesId)]: 1 }), areas: { ...s.areas, [speciesId]: area } });
+    set({ economy: mockEconomy(s.economy.balance - price, { ...s.economy.inventory, [areaInfoKey(speciesId)]: 1 }, s.economy.equipped), areas: { ...s.areas, [speciesId]: area } });
   },
   retryPending: async () => { const s = get(); if (s.pending && !s.busy) await get()._run(s.pending); },
   _run: async pending => {
@@ -252,6 +265,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       } else if (pending.kind === 'reveal') {
         const res = await api.revealArea(pending.body);
         set({ economy: res.economy, areas: res.areas, phase: 'zukan' });
+      } else if (pending.kind === 'equipment') {
+        await api.setEquipment(pending.body);
+        set({ economy: await api.fetchEconomy(), phase: 'shop' });
       } else {
         await api.exchange(pending.body);
         set({ economy: await api.fetchEconomy(), phase: 'shop' });
@@ -262,7 +278,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       // 明確に拒否された操作は終了。通信断・5xxでは結果が不明なので同じIDで再確認する。
       if (error instanceof api.ApiError && error.status >= 400 && error.status < 500) {
         save(PENDING_KEY, null);
-        set({ pending: null, busy: false, phase: pending.kind === 'exchange' ? 'shop' : pending.kind === 'reveal' ? 'zukan' : 'idle', error: '操作を受け付けられませんでした。残高・所持品・試行の有効期限を確認してください。' });
+        set({ pending: null, busy: false, phase: pending.kind === 'exchange' || pending.kind === 'equipment' ? 'shop' : pending.kind === 'reveal' ? 'zukan' : 'idle', error: '操作を受け付けられませんでした。残高・所持品・試行の有効期限を確認してください。' });
         try { set({ economy: await api.fetchEconomy() }); } catch { /* 次回操作時に再確認する */ }
       } else set({ busy: false, error: '通信結果を確認できません。同じ操作の結果を再確認してください。' });
     }
