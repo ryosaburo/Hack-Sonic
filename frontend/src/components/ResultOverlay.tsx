@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
-import { RARITY_LABEL } from '../types';
+import { RARITY_LABEL, RARITY_SYMBOL } from '../types';
+import { Reticle } from './Reticle';
 import './ResultOverlay.css';
 
 export function ResultOverlay() {
@@ -28,8 +29,10 @@ export function ResultOverlay() {
   if (!success) {
     return (
       <div className="overlay-backdrop">
-        <div className="result-card fail">
-          <p className="result-heading">逃げられた…</p>
+        <div className="result-card fail" role="dialog" aria-modal="true" aria-labelledby="result-heading">
+          <Reticle className="result-reticle lost" />
+          <p className="result-heading" id="result-heading">逃げられた…</p>
+          <p className="result-note">観測対象は照準の外へ流れていった</p>
           <button type="button" className="primary-btn" onClick={returnToIdle}>
             もう一度キャストする
           </button>
@@ -40,10 +43,22 @@ export function ResultOverlay() {
 
   return (
     <div className="overlay-backdrop">
-      <div className={`result-card success rarity-${entry.rarity}`}>
-        <p className="rarity-badge">{RARITY_LABEL[entry.rarity]}</p>
-        <div className="silhouette" />
-        <p className="body-name">{entry.body_name}</p>
+      <div
+        className={`result-card success rarity-${entry.rarity}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="result-body-name"
+      >
+        <p className="rarity-badge">
+          <span className="zk-symbol" aria-hidden="true">
+            {RARITY_SYMBOL[entry.rarity]}
+          </span>
+          {RARITY_LABEL[entry.rarity]}
+        </p>
+        <Reticle className="result-reticle silhouette" />
+        <p className="body-name" id="result-body-name">
+          {entry.body_name}
+        </p>
 
         {isNew ? (
           <div className="choice-row">
@@ -55,7 +70,13 @@ export function ResultOverlay() {
             </button>
           </div>
         ) : (
-          <p className="known-note">図鑑に記録済み。+{earnedPoints} pt（所持 {balance} pt）<br />自動的に逃がします</p>
+          <p className="known-note">
+            図鑑に記録済み <span className="zk-num known-points">+{earnedPoints} pt</span>
+            <span className="known-balance">
+              所持 <span className="zk-num">{balance} pt</span>
+            </span>
+            自動的に逃がします
+          </p>
         )}
       </div>
     </div>

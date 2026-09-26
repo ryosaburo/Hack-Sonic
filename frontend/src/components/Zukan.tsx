@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { SEASON_LABEL, SEASON_ORDER, type Season } from '../engine/seasons';
 import { AREA_INFO_PRICES } from '../engine/economy';
-import { RARITY_LABEL, RARITY_ORDER, type CatalogEntry, type Rarity } from '../types';
+import { RARITY_LABEL, RARITY_ORDER, RARITY_SYMBOL, type CatalogEntry, type Rarity } from '../types';
 import { GyotakuReveal } from './GyotakuReveal';
+import { Reticle } from './Reticle';
 import '../styles/observatory.css';
 import './Zukan.css';
 
@@ -12,14 +13,6 @@ type FilterValue = 'all' | Rarity;
 type SeasonGroup = Season | 'all_year';
 
 const SEASON_GROUPS: SeasonGroup[] = [...SEASON_ORDER, 'all_year'];
-
-// 星図の観測記号でレア度を表す（色だけに頼らない）
-const RARITY_SYMBOL: Record<Rarity, string> = {
-  common: '○',
-  rare: '◎',
-  super_rare: '◈',
-  legendary: '✦',
-};
 
 // 季節ごとに宵の南中付近に来る赤経の範囲。天球図の目盛りラベルとして添える
 const SEASON_RA: Record<SeasonGroup, string> = {
@@ -33,15 +26,6 @@ const SEASON_RA: Record<SeasonGroup, string> = {
 function inGroup(entry: CatalogEntry, group: SeasonGroup): boolean {
   if (!entry.seasons?.length) return group === 'all_year';
   return group !== 'all_year' && entry.seasons.includes(group);
-}
-
-// 未観測の天体を示す照準（点線の輪郭＋十字線＋中心の点）
-function Reticle({ className }: { className: string }) {
-  return (
-    <span className={`zk-reticle ${className}`} aria-hidden="true">
-      <span className="zk-reticle-dot" />
-    </span>
-  );
 }
 
 // 天体ごとの「釣れやすい場所」。rare以上はポイントで座標の範囲を開示できる（座標は釣り画面の表示と同じ単位）

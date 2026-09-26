@@ -52,6 +52,14 @@ export const RARITY_LABEL: Record<Rarity, string> = {
   legendary: '伝説',
 };
 
+// 星図の観測記号でレア度を表す（色だけに頼らない）
+export const RARITY_SYMBOL: Record<Rarity, string> = {
+  common: '○',
+  rare: '◎',
+  super_rare: '◈',
+  legendary: '✦',
+};
+
 export const RARITY_CONFIG: Record<Rarity, RarityConfig> = {
   common: {
     tapDecrease: 4,
