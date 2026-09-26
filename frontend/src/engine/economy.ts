@@ -10,6 +10,8 @@ export interface Spot {
 export interface Product {
   id: string; name: string; kind: string; price: number; description: string;
   rarity_multipliers?: number[]; extra_seconds?: number; damage_multiplier?: number;
+  // 誘引ルアー：使った1投はこのレア度以上だけが掛かる
+  min_rarity?: string;
 }
 export interface Economy {
   balance: number;
@@ -54,9 +56,13 @@ export function drawMock(catalog: CatalogEntry[], season: Season, x: number, y: 
   const candidates = seasonal.length ? seasonal : catalog;
   let multipliers = [1, 1, 1, 1];
   for (const spot of shop.spots) if (inSpot(spot, x, y)) multipliers = multipliers.map((m, i) => Math.max(m, spot.rarity_multipliers[i]));
-  if (lure) multipliers = multipliers.map((m, i) => m * shop.products.find(p => p.id === 'lure')!.rarity_multipliers![i]);
-  const rarities = (Object.keys(RARITY_WEIGHTS) as Rarity[]).filter(r => candidates.some(e => e.rarity === r));
+  const lureProduct: Product = shop.products.find(p => p.id === 'lure')!;
+  if (lure) multipliers = multipliers.map((m, i) => m * lureProduct.rarity_multipliers![i]);
   const order = Object.keys(RARITY_WEIGHTS);
+  const available = (Object.keys(RARITY_WEIGHTS) as Rarity[]).filter(r => candidates.some(e => e.rarity === r));
+  // 誘引ルアーを使った1投は min_rarity 以上だけを候補にする（その季節に該当がなければ絞らない）
+  const boosted = lure ? available.filter(r => order.indexOf(r) >= order.indexOf(lureProduct.min_rarity ?? 'common')) : [];
+  const rarities = boosted.length ? boosted : available;
   const rarity = weightedDraw(rarities, rarities.map(r => RARITY_WEIGHTS[r] * Math.min(6, multipliers[order.indexOf(r)])));
   const entries = candidates.filter(e => e.rarity === rarity);
   return weightedDraw(entries, entries.map(e => catchWeight(e, season, x, y)));

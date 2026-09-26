@@ -80,6 +80,15 @@ def configured_test_points() -> int:
     return int(raw)
 
 
+RARITY_ORDER = ["common", "rare", "super_rare", "legendary"]
+
+
+def lure_rarities(available: set[str]) -> set[str]:
+    """誘引ルアーを使った1投は、商品の min_rarity 以上だけを候補にする（その季節に該当がなければ絞らない）。"""
+    lowest = RARITY_ORDER.index(PRODUCTS["lure"]["min_rarity"])
+    return {r for r in available if RARITY_ORDER.index(r) >= lowest} or available
+
+
 def rarity_multipliers(x: float, y: float, use_lure: bool) -> list[float]:
     # 釣り場は購入前から存在する。重複範囲では最大の補正を使う。
     multipliers = [1.0] * 4
