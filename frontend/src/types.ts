@@ -15,6 +15,16 @@ export interface CatalogEntry {
   flavor_text: string;
   // 釣れる季節。未指定なら四季を通して釣れる
   seasons?: Season[];
+  // rare以上が釣れやすくなる季節・座標（モックのみ。バックエンドのAPIは座標を伏せるため返さない）
+  catch_bonus?: CatchBonus;
+}
+
+export interface CatchBonus {
+  seasons?: Season[];
+  season_multiplier?: number;
+  // 画面の「座標」表示の単位（ワールド座標の1/10、yは上向きが正）
+  area?: { x: number; y: number; radius: number };
+  area_multiplier?: number;
 }
 
 export interface CollectionRecord {

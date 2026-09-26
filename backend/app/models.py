@@ -24,6 +24,8 @@ class CatalogEntry(SQLModel, table=True):
     license_note: Optional[str] = None
     # 釣れる季節。NULLなら四季を通して釣れる
     seasons: Optional[list[str]] = Field(default=None, sa_column=Column(JSON))
+    # rare以上の天体が釣れやすくなる季節・座標。釣り場と同じく座標を伏せるため、公開APIには含めない
+    catch_bonus: Optional[dict] = Field(default=None, sa_column=Column(JSON))
 
 
 class User(SQLModel, table=True):
