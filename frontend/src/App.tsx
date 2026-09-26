@@ -1,13 +1,16 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useGameStore } from './store/gameStore';
 import { FishingScene } from './components/FishingScene';
 import { ResultOverlay } from './components/ResultOverlay';
 import { GyotakuReveal } from './components/GyotakuReveal';
 import { Zukan } from './components/Zukan';
 import { ExchangeShop, EconomyHud, TransactionStatus } from './components/ExchangeShop';
+import { LaunchIntro } from './components/LaunchIntro';
 import './App.css';
 
 function App() {
+  const [arrived, setArrived] = useState(false);
+  const enterFishing = useCallback(() => setArrived(true), []);
   const phase = useGameStore((s) => s.phase);
   const currentEntry = useGameStore((s) => s.currentEntry);
   const isNewSpecies = useGameStore((s) => s.isNewSpecies);
@@ -19,8 +22,12 @@ function App() {
     loadCatalog();
   }, [loadCatalog]);
 
+  if (!arrived) {
+    return <div className="app-root"><LaunchIntro onComplete={enterFishing} /></div>;
+  }
+
   return (
-    <div className="app-root">
+    <div className="app-root fishing-arrival">
       <FishingScene />
       <ResultOverlay />
 
