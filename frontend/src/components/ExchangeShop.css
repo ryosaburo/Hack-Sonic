@@ -1,0 +1,22 @@
+.economy-hud { position: absolute; left: 16px; top: 16px; z-index: 6; display: grid; gap: 8px; color: #eaf2ff; font-size: .8rem; max-width: calc(100% - 115px); }
+.economy-hud label { display: flex; align-items: center; gap: 4px; padding: 5px; border-radius: 8px; background: #080d20d9; }
+.economy-hud small { background: #080d20d9; padding: 4px; border-radius: 6px; }
+.exchange-shop { width: min(760px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); box-sizing: border-box; overflow: auto; border: 1px solid #54658d; border-radius: 20px; padding: 24px; background: #0d1326; color: #eaf2ff; }
+.exchange-shop::backdrop { background: #02030ac9; }
+.shop-header, .shop-purchase { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.shop-header h2 { margin: 0; }
+.shop-header strong, .shop-purchase > span { color: #ffe2a0; }
+.shop-intro, .shop-product p, .shop-spot p { color: #bcc9e2; font-size: .88rem; line-height: 1.7; }
+.shop-products { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.shop-product { display: flex; flex-direction: column; gap: 8px; padding: 18px; border: 1px solid #354361; border-radius: 14px; background: #18223a; }
+.shop-product h3, .shop-product p { margin: 0; }
+.shop-product p { flex: 1; }
+.shop-kind { color: #91c8e6; font-size: .75rem; }
+.shop-purchase { margin-top: 10px; }
+.shop-purchase button { padding: .6rem .9rem; white-space: nowrap; }
+.shop-spot { border-top: 1px solid #354361; margin-top: 20px; }
+button:disabled { opacity: .5; cursor: default; }
+.transaction-status .result-card { max-width: min(360px, calc(100vw - 60px)); min-width: 0; color: #eaf2ff; }
+.economy-error { position: absolute; bottom: 12px; left: 12px; right: 12px; z-index: 30; padding: 12px; border-radius: 10px; background: #482639; color: #fff; }
+.economy-error button { margin-left: 8px; }
+@media (max-width: 560px) { .shop-products { grid-template-columns: 1fr; } .exchange-shop { padding: 18px; } .shop-header { align-items: flex-start; } }

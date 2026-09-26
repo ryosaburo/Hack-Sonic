@@ -10,6 +10,7 @@ export interface CatalogEntry {
   credit_text: string;
   rarity: Rarity;
   weight: number;
+  point: number;
   capture_date: string;
   flavor_text: string;
   // 釣れる季節。未指定なら四季を通して釣れる
@@ -84,6 +85,8 @@ export type ReelPhaseMode = 'tap' | 'hold';
 
 export type GamePhase =
   | 'idle'
+  | 'pending'
+  | 'shop'
   | 'cast'
   | 'waiting_bite'
   | 'reeling'

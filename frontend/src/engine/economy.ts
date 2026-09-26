@@ -1,0 +1,39 @@
+import shop from '../data/shop.mock.json';
+import type { CatalogEntry, Rarity } from '../types';
+import type { Season } from './seasons';
+
+export interface Spot {
+  id: string; name: string;
+  x_min: number; x_max: number; y_min: number; y_max: number;
+  rarity_multipliers: number[];
+}
+export interface Product {
+  id: string; name: string; kind: string; price: number; description: string;
+  rarity_multipliers?: number[]; extra_seconds?: number; damage_multiplier?: number;
+}
+export interface Economy { balance: number; inventory: Record<string, number>; spots: Spot[] }
+// TODO: catalog.json の point 確定後、shop.mock.json の価格・効果量をbackendと同期して調整する。
+export const MOCK_PRODUCTS: Product[] = shop.products;
+export const EMPTY_ECONOMY: Economy = { balance: 0, inventory: {}, spots: [] };
+export const RARITY_WEIGHTS: Record<Rarity, number> = { common: 70, rare: 20, super_rare: 8, legendary: 2 };
+export const inSpot = (spot: Spot, x: number, y: number) => x >= spot.x_min && x <= spot.x_max && y >= spot.y_min && y <= spot.y_max;
+export function mockEconomy(balance: number, inventory: Record<string, number>): Economy {
+  return { balance, inventory, spots: shop.spots.filter(s => inventory[s.id] > 0) };
+}
+export function weightedDraw<T>(values: T[], weights: number[]): T {
+  let n = Math.random() * weights.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < values.length; i++) { n -= weights[i]; if (n < 0) return values[i]; }
+  return values[values.length - 1];
+}
+export function drawMock(catalog: CatalogEntry[], season: Season, x: number, y: number, lure: boolean): CatalogEntry {
+  const seasonal = catalog.filter(e => !e.seasons || e.seasons.includes(season));
+  const candidates = seasonal.length ? seasonal : catalog;
+  let multipliers = [1, 1, 1, 1];
+  for (const spot of shop.spots) if (inSpot(spot, x, y)) multipliers = multipliers.map((m, i) => Math.max(m, spot.rarity_multipliers[i]));
+  if (lure) multipliers = multipliers.map((m, i) => m * shop.products.find(p => p.id === 'lure')!.rarity_multipliers![i]);
+  const rarities = (Object.keys(RARITY_WEIGHTS) as Rarity[]).filter(r => candidates.some(e => e.rarity === r));
+  const order = Object.keys(RARITY_WEIGHTS);
+  const rarity = weightedDraw(rarities, rarities.map(r => RARITY_WEIGHTS[r] * Math.min(6, multipliers[order.indexOf(r)])));
+  const entries = candidates.filter(e => e.rarity === rarity);
+  return weightedDraw(entries, entries.map(e => e.weight));
+}

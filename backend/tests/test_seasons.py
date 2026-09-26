@@ -53,7 +53,7 @@ def seasonal_legendaries(client):
 
 @pytest.fixture
 def force_legendary(monkeypatch):
-    monkeypatch.setattr(cast, "_draw_rarity", lambda available: "legendary")
+    monkeypatch.setattr(cast, "_draw_rarity", lambda available, multipliers=None: "legendary")
 
 
 def _cast(client, device_id, season):

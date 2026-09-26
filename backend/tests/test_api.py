@@ -1,6 +1,8 @@
 from fastapi.testclient import TestClient
+import json
 
 from app.main import app
+from app.database import CATALOG_SEED_PATH
 
 RARITIES = {"common", "rare", "super_rare", "legendary"}
 
@@ -17,8 +19,8 @@ def test_catalog_lists_all_seeded_entries():
         res = client.get("/api/catalog")
         assert res.status_code == 200
         data = res.json()
-        assert len(data) == 9
-        assert {"id", "body_name", "mission_name", "rarity", "flavor_text"} <= set(data[0].keys())
+        assert len(data) == len(json.loads(CATALOG_SEED_PATH.read_text()))
+        assert {"id", "body_name", "mission_name", "rarity", "flavor_text", "point"} <= set(data[0].keys())
 
 
 def test_cast_start_returns_valid_rarity_and_time_limit():
@@ -31,7 +33,7 @@ def test_cast_start_returns_valid_rarity_and_time_limit():
         assert body["attempt_id"]
 
 
-def test_cast_resolve_success_registers_collection():
+def test_cast_resolve_registers_only_after_keep_decision():
     headers = {"X-Device-Id": "ci-device-2"}
     with TestClient(app) as client:
         start = client.post("/api/cast/start", headers=headers).json()
@@ -50,7 +52,10 @@ def test_cast_resolve_success_registers_collection():
 
         collection = client.get("/api/collection", headers=headers)
         assert collection.status_code == 200
-        assert len(collection.json()) == 1
+        assert collection.json() == []
+        decision = client.post('/api/cast/decision', headers=headers, json={"attempt_id": start["attempt_id"], "decision": "keep"})
+        assert decision.status_code == 200
+        assert len(client.get('/api/collection', headers=headers).json()) == 1
 
 
 def test_cast_resolve_failure_reports_no_entry():

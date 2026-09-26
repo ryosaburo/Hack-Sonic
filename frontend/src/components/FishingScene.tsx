@@ -171,6 +171,8 @@ export function FishingScene() {
 
   const phase = useGameStore((s) => s.phase);
   const gauge = useGameStore((s) => s.gauge);
+  const timeLimit = useGameStore((s) => s.timeLimit);
+  const ready = useGameStore((s) => s.ready);
   const timeLeft = useGameStore((s) => s.timeLeft);
   const reelPhaseMode = useGameStore((s) => s.reelPhaseMode);
   const phaseTelegraph = useGameStore((s) => s.phaseTelegraph);
@@ -579,6 +581,25 @@ export function FishingScene() {
         ctx.stroke();
       }
 
+      // 購入した釣り場情報はワールド座標の枠として表示する。
+      if (state.phase === 'idle') {
+        ctx.save();
+        for (const spot of state.economy.spots) {
+          const inside = catchX >= spot.x_min && catchX <= spot.x_max && catchY >= spot.y_min && catchY <= spot.y_max;
+          ctx.fillStyle = inside ? 'rgba(120,220,190,0.13)' : 'rgba(120,180,240,0.08)';
+          ctx.strokeStyle = inside ? '#9ff0ce' : '#8abde9';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([12, 8]);
+          ctx.fillRect(spot.x_min, spot.y_min, spot.x_max - spot.x_min, spot.y_max - spot.y_min);
+          ctx.strokeRect(spot.x_min, spot.y_min, spot.x_max - spot.x_min, spot.y_max - spot.y_min);
+          ctx.setLineDash([]);
+          ctx.font = '16px sans-serif';
+          ctx.fillStyle = '#eaf2ff';
+          ctx.fillText(spot.name + (inside ? ' · 範囲内' : ''), spot.x_min + 12, spot.y_min + 26);
+        }
+        ctx.restore();
+      }
+
       // 竿（しなりは糸の引かれる側へ曲げる）
       const perpX = Math.cos(e.rodAngle);
       const perpY = Math.sin(e.rodAngle);
@@ -625,6 +646,7 @@ export function FishingScene() {
   useEffect(() => {
     const keys = engineRef.current.keys;
     function onKeyDown(ev: KeyboardEvent) {
+      if ((ev.target as HTMLElement).closest('button, input, select, dialog')) return;
       if (ev.code in PAN_KEYS) {
         if (useGameStore.getState().phase !== 'idle') return;
         ev.preventDefault();
@@ -802,10 +824,12 @@ export function FishingScene() {
               <button
                 type="button"
                 className="cast-button"
+                disabled={!ready}
                 onClick={(e) => {
                   e.stopPropagation();
                   initAudio();
-                  startCast();
+                  const engine = engineRef.current;
+                  startCast(engine.panX + CATCH_POINT.x, engine.panY + CATCH_POINT.y);
                 }}
               >
                 ここで竿をキャストする
@@ -823,7 +847,7 @@ export function FishingScene() {
             <div className="time-bar">
               <div
                 className="time-bar-fill"
-                style={{ width: `${(timeLeft / config.timeLimit) * 100}%` }}
+                style={{ width: `${(timeLeft / timeLimit) * 100}%` }}
               />
             </div>
             <div className={`phase-icon ${phaseTelegraph ? 'telegraph' : ''}`}>

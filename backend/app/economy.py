@@ -1,0 +1,66 @@
+"""交換と報酬の永続化。SQLiteの書込トランザクションで再送・競合を直列化する。"""
+import json
+import os
+from contextlib import contextmanager
+from pathlib import Path
+
+from sqlmodel import Session, select
+
+from .models import User, Wallet
+
+# TODO: catalog.json の point 確定後、shop.json の交換価格・効果量を再調整する。
+SHOP = json.loads((Path(__file__).parent / "data/shop.json").read_text())
+PRODUCTS = {p["id"]: p for p in SHOP["products"]}
+
+
+@contextmanager
+def economy_transaction(session: Session, user_id: int):
+    # 認証の読取トランザクションを終了してからロックする。呼出元で変更はまだ行わない。
+    session.rollback()
+    try:
+        if session.get_bind().dialect.name == "sqlite":
+            session.connection().exec_driver_sql("BEGIN IMMEDIATE")
+        else:
+            session.exec(select(User).where(User.id == user_id).with_for_update()).one()
+        yield
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+
+def wallet_for(session: Session, user_id: int) -> Wallet:
+    wallet = session.get(Wallet, user_id)
+    if wallet is None:
+        wallet = Wallet(user_id=user_id)
+        session.add(wallet)
+    return wallet
+
+
+def wallet_public(wallet: Wallet | None) -> dict:
+    inventory = wallet.inventory if wallet else {}
+    return {
+        "balance": wallet.balance if wallet else 0,
+        "inventory": dict(inventory),
+        "spots": [s for s in SHOP["spots"] if inventory.get(s["id"], 0) > 0],
+    }
+
+
+def configured_test_points() -> int:
+    """ローカル検証用。未設定なら通常のポイント付与だけを使う。"""
+    raw = os.getenv("SPACE_FISHING_TEST_POINTS", "0")
+    if not raw.isascii() or not raw.isdecimal() or int(raw) > 1_000_000:
+        raise ValueError("SPACE_FISHING_TEST_POINTS must be an integer from 0 to 1000000")
+    return int(raw)
+
+
+def rarity_multipliers(x: float, y: float, use_lure: bool) -> list[float]:
+    # 釣り場は購入前から存在する。重複範囲では最大の補正を使う。
+    multipliers = [1.0] * 4
+    for spot in SHOP["spots"]:
+        if spot["x_min"] <= x <= spot["x_max"] and spot["y_min"] <= y <= spot["y_max"]:
+            multipliers = [max(a, b) for a, b in zip(multipliers, spot["rarity_multipliers"])]
+    if use_lure:
+        multipliers = [a * b for a, b in zip(multipliers, PRODUCTS["lure"]["rarity_multipliers"])]
+    # TODO: pointと実際の成功率を見て併用上限を調整する。
+    return [min(m, 6) for m in multipliers]

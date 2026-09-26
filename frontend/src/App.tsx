@@ -4,6 +4,7 @@ import { FishingScene } from './components/FishingScene';
 import { ResultOverlay } from './components/ResultOverlay';
 import { GyotakuReveal } from './components/GyotakuReveal';
 import { Zukan } from './components/Zukan';
+import { ExchangeShop, EconomyHud, TransactionStatus } from './components/ExchangeShop';
 import './App.css';
 
 function App() {
@@ -34,6 +35,9 @@ function App() {
       )}
 
       <Zukan />
+      <ExchangeShop />
+      <EconomyHud />
+      <TransactionStatus />
 
       {phase === 'idle' && (
         <button type="button" className="zukan-fab" onClick={openZukan}>
