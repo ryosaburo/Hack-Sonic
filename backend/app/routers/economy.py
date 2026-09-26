@@ -7,7 +7,7 @@ from ..economy import (
     AREA_INFO_PRICES, PRODUCTS, area_info_key, configured_test_points, economy_transaction,
     revealed_areas, wallet_for, wallet_public,
 )
-from ..models import AreaRevealRequest, CatalogEntry, Exchange, ExchangeRequest, User, Wallet
+from ..models import AreaRevealRequest, CatalogEntry, EquipmentRequest, Exchange, ExchangeRequest, User, Wallet
 
 router = APIRouter(prefix="/api/economy", tags=["economy"])
 
@@ -54,6 +54,18 @@ def exchange(body: ExchangeRequest, session: Session = Depends(get_session), use
             wallet.balance -= product["price"]
             wallet.inventory = {**wallet.inventory, body.product_id: wallet.inventory.get(body.product_id, 0) + 1}
             session.add(Exchange(id=exchange_id, user_id=user_id, product_id=body.product_id))
+        result = wallet_public(wallet)
+    return result
+
+
+@router.put("/equipment")
+def set_equipment(body: EquipmentRequest, session: Session = Depends(get_session), user: User = Depends(get_current_user)):
+    user_id = user.id
+    with economy_transaction(session, user_id):
+        wallet = wallet_for(session, user_id)
+        if not wallet.inventory.get(body.product_id):
+            raise HTTPException(409, "equipment not owned")
+        wallet.equipped = {**wallet.equipped, body.product_id: body.equipped}
         result = wallet_public(wallet)
     return result
 

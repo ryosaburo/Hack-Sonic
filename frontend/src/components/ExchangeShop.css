@@ -37,10 +37,14 @@
 .shop-product.owned .shop-price { color: var(--zk-ink-faint); }
 
 .exchange-shop .close-btn,
-.exchange-shop .primary-btn { border: 1px solid var(--zk-rule-strong); border-radius: var(--zk-radius); background: transparent; color: var(--zk-ink); padding: .4rem .9rem; font-size: .8rem; font-weight: 500; letter-spacing: .1em; white-space: nowrap; cursor: pointer; transition: border-color .15s ease, color .15s ease; }
+.exchange-shop .primary-btn,
+.exchange-shop .shop-equip-btn { border: 1px solid var(--zk-rule-strong); border-radius: var(--zk-radius); background: transparent; color: var(--zk-ink); padding: .4rem .9rem; font-size: .8rem; font-weight: 500; letter-spacing: .1em; white-space: nowrap; cursor: pointer; transition: border-color .15s ease, color .15s ease; }
 .exchange-shop .primary-btn { border-color: var(--zk-brass); color: var(--zk-brass); }
+.exchange-shop .shop-equip-btn { border-color: var(--zk-brass); color: var(--zk-brass); }
+.exchange-shop .shop-equip-btn[aria-pressed="true"] { background: var(--zk-brass); color: var(--zk-bg); }
 .exchange-shop .close-btn:hover:not(:disabled),
-.exchange-shop .primary-btn:hover:not(:disabled) { border-color: var(--zk-brass); color: var(--zk-ink); }
+.exchange-shop .primary-btn:hover:not(:disabled),
+.exchange-shop .shop-equip-btn:hover:not(:disabled) { border-color: var(--zk-brass); color: var(--zk-ink); }
 .exchange-shop .primary-btn:disabled { border-color: var(--zk-rule); border-style: dashed; color: var(--zk-ink-faint); opacity: 1; }
 .shop-error .close-btn { flex: none; border-color: var(--zk-alert); color: var(--zk-alert); }
 
@@ -59,7 +63,7 @@ button:disabled { opacity: .5; cursor: default; }
   .exchange-shop { padding: 1.1rem 1rem 1.3rem; }
   .shop-subtitle { display: block; margin: .3rem 0 0; }
   .shop-product { grid-template-columns: 2.6rem minmax(0, 1fr); row-gap: .6rem; }
-  .shop-purchase { grid-column: 2; flex-direction: row; align-items: center; justify-content: space-between; }
+  .shop-purchase { grid-column: 2; flex-direction: row; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
 }
 
 @media (prefers-reduced-motion: reduce) {

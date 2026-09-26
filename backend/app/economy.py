@@ -64,6 +64,10 @@ def wallet_public(wallet: Wallet | None) -> dict:
     return {
         "balance": wallet.balance if wallet else 0,
         "inventory": dict(inventory),
+        "equipped": {
+            product_id: bool(inventory.get(product_id) and wallet and (wallet.equipped or {}).get(product_id))
+            for product_id in ("time_extension", "power_reel")
+        },
         "spots": [s for s in SHOP["spots"] if inventory.get(s["id"], 0) > 0],
     }
 
