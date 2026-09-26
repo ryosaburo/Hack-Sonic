@@ -28,9 +28,14 @@
 /* 目盛りは図鑑の季節見出しと同じ描き方 */
 .shop-products { margin: 0; padding: 7px 0 0; list-style: none; background: repeating-linear-gradient(90deg, var(--zk-rule-strong) 0 1px, transparent 1px 60px) top left / 100% 7px no-repeat, repeating-linear-gradient(90deg, var(--zk-rule) 0 1px, transparent 1px 12px) top left / 100% 4px no-repeat; }
 
-.shop-product { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr) auto; align-items: start; gap: 1rem; padding: .9rem .4rem; }
+.shop-product { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: start; gap: 1rem; padding: .9rem .4rem; }
 .shop-product + .shop-product { border-top: 1px solid var(--zk-rule); }
 .shop-no { padding-top: .15rem; font-size: 1.05rem; font-weight: 500; color: var(--zk-ink); }
+/* 番号の下に商品のイラスト。図鑑の図版と同じく細い罫線の枠に収める */
+.shop-index { display: flex; flex-direction: column; align-items: flex-start; gap: .45rem; }
+.shop-plate { display: block; width: 52px; aspect-ratio: 1; border: 1px solid var(--zk-rule-strong); background: var(--zk-surface); overflow: hidden; }
+.shop-image { display: block; width: 100%; height: 100%; object-fit: cover; }
+.shop-product.owned .shop-image { opacity: .55; }
 .shop-body { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
 .shop-name { margin: 0; font-family: var(--zk-font-serif); font-weight: 700; font-size: 1rem; letter-spacing: .05em; }
 .shop-kind { align-self: flex-start; padding: .02rem .45rem; border: 1px solid var(--zk-rule-strong); border-radius: 2px; font-size: .68rem; letter-spacing: .08em; color: var(--zk-ink-muted); }
@@ -66,7 +71,9 @@ button:disabled { opacity: .5; cursor: default; }
 @media (max-width: 560px) {
   .exchange-shop { padding: 1.1rem 1rem 1.3rem; }
   .shop-subtitle { display: block; margin: .3rem 0 0; }
-  .shop-product { grid-template-columns: 2.6rem minmax(0, 1fr); row-gap: .6rem; }
+  .shop-product { grid-template-columns: 48px minmax(0, 1fr); column-gap: .8rem; row-gap: .6rem; }
+  .shop-no { font-size: .9rem; }
+  .shop-plate { width: 44px; }
   .shop-purchase { grid-column: 2; flex-direction: row; align-items: center; justify-content: flex-end; }
 }
 

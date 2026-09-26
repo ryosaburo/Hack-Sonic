@@ -15,6 +15,8 @@ export interface Product {
   min_rarity?: string;
   // 消耗品以外で、同じ商品を交換できる上限（既定1）
   max_count?: number;
+  // 交換所に出す商品のイラスト（frontend/public/shop-images）
+  image_url?: string;
 }
 export interface Economy {
   balance: number;
