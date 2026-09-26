@@ -1,5 +1,5 @@
 import type { CatalogEntry, CollectionRecord, Rarity } from '../types';
-import type { Economy, Product } from '../engine/economy';
+import type { CatchArea, Economy, Product } from '../engine/economy';
 import type { Season } from '../engine/seasons';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000';
@@ -84,4 +84,6 @@ export function castResolve(body: CastResolveRequest): Promise<CastResolveRespon
 export const fetchEconomy = () => request<Economy>('/api/economy');
 export const fetchProducts = () => request<Product[]>('/api/economy/products');
 export const exchange = (body: { request_id: string; product_id: string }) => request<Economy>('/api/economy/exchange', { method: 'POST', body: JSON.stringify(body) });
-export const castDecision = (body: { attempt_id: string; decision: 'keep' | 'release' }) => request<{ decision: string }>('/api/cast/decision', { method: 'POST', body: JSON.stringify(body) });
+export const fetchAreas = () => request<Record<string, CatchArea>>('/api/economy/areas');
+export const revealArea = (body: { request_id: string; species_id: string }) => request<{ economy: Economy; areas: Record<string, CatchArea> }>('/api/economy/reveal', { method: 'POST', body: JSON.stringify(body) });
+export const castDecision =(body: { attempt_id: string; decision: 'keep' | 'release' }) => request<{ decision: string }>('/api/cast/decision', { method: 'POST', body: JSON.stringify(body) });

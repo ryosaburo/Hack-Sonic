@@ -6,11 +6,33 @@ from pathlib import Path
 
 from sqlmodel import Session, select
 
-from .models import User, Wallet
+from .models import CatalogEntry, User, Wallet
 
 # TODO: catalog.json の point 確定後、shop.json の交換価格・効果量を再調整する。
 SHOP = json.loads((Path(__file__).parent / "data/shop.json").read_text())
 PRODUCTS = {p["id"]: p for p in SHOP["products"]}
+# 天体ごとの「釣れやすい場所」の開示価格（レア度別）。交換所の商品一覧には出さない
+AREA_INFO_PRICES: dict[str, int] = SHOP["area_info_prices"]
+AREA_INFO_PREFIX = "area_info:"
+
+
+def area_info_key(species_id: str) -> str:
+    # 開示済みの印は所持品に「area_info:<天体ID>」として持つ
+    return f"{AREA_INFO_PREFIX}{species_id}"
+
+
+def revealed_areas(session: Session, wallet: Wallet | None) -> dict[str, dict]:
+    """開示済みの天体の座標範囲だけを返す（未開示の座標は伏せたまま）。"""
+    inventory = wallet.inventory if wallet else {}
+    areas = {}
+    for key, count in inventory.items():
+        if not key.startswith(AREA_INFO_PREFIX) or count < 1:
+            continue
+        entry = session.get(CatalogEntry, key.removeprefix(AREA_INFO_PREFIX))
+        area = (entry.catch_bonus or {}).get("area") if entry else None
+        if area:
+            areas[entry.id] = area
+    return areas
 
 
 @contextmanager

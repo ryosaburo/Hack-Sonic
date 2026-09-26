@@ -4,7 +4,7 @@ import { RARITY_CONFIG } from '../types';
 import * as api from '../api/client';
 import catalogMock from '../data/catalog.mock.json';
 import { seasonOf, type Season } from '../engine/seasons';
-import { drawMock, EMPTY_ECONOMY, MOCK_PRODUCTS, mockEconomy, type Economy, type Product } from '../engine/economy';
+import { AREA_INFO_PRICES, areaInfoKey, drawMock, EMPTY_ECONOMY, MOCK_PRODUCTS, mockAreas, mockEconomy, type CatchArea, type Economy, type Product } from '../engine/economy';
 
 const MOCK_KEY = 'space-fishing:mock-progress:v1';
 const PENDING_KEY = 'space-fishing:pending:v1';
@@ -23,12 +23,15 @@ type PendingAction = (
   | { kind: 'resolve'; body: api.CastResolveRequest }
   | { kind: 'decision'; body: { attempt_id: string; decision: 'keep' | 'release' } }
   | { kind: 'exchange'; body: { request_id: string; product_id: string } }
+  | { kind: 'reveal'; body: { request_id: string; species_id: string } }
 ) & { context: Context };
 
 interface GameState extends Context {
   phase: GamePhase; usingBackend: boolean; ready: boolean; loading: boolean; busy: boolean; error: string | null;
   catalog: CatalogEntry[]; collection: Record<string, CollectionRecord>; season: Season;
   economy: Economy; products: Product[]; useLure: boolean; pending: PendingAction | null;
+  // ポイントで開示した天体ごとの「釣れやすい場所」（画面の座標表示の単位）
+  areas: Record<string, CatchArea>;
   attemptId: string | null; gauge: number; timeLeft: number; timeLimit: number; damageMultiplier: number;
   reelPhaseMode: ReelPhaseMode; phaseTimer: number; phaseTelegraph: boolean; isHolding: boolean; tapPulse: number;
   lastResultSuccess: boolean | null;
@@ -37,7 +40,7 @@ interface GameState extends Context {
   triggerBite: () => void; pressStart: () => void; pressEnd: () => void; tickReel: (dt: number) => void;
   keepGyotaku: () => void; releaseCatch: () => void; returnToIdle: () => void;
   openZukan: () => void; closeZukan: () => void; openShop: () => void; closeShop: () => void;
-  setUseLure: (use: boolean) => void; buy: (id: string) => Promise<void>;
+  setUseLure: (use: boolean) => void; buy: (id: string) => Promise<void>; revealArea: (speciesId: string) => Promise<void>;
   retryPending: () => Promise<void>; dismissError: () => void;
   _run: (pending: PendingAction) => Promise<void>;
   _resolve: (success: boolean) => Promise<void>;
@@ -48,7 +51,7 @@ const contextOf = (s: Context): Context => ({ currentEntry: s.currentEntry, isNe
 export const useGameStore = create<GameState>((set, get) => ({
   phase: 'idle', usingBackend: false, ready: false, loading: false, busy: false, error: null,
   catalog: mockCatalog, collection: {}, season: seasonOf(new Date()),
-  economy: EMPTY_ECONOMY, products: MOCK_PRODUCTS, useLure: false, pending: null,
+  economy: EMPTY_ECONOMY, products: MOCK_PRODUCTS, useLure: false, pending: null, areas: {},
   attemptId: null, currentEntry: null, gauge: 100, timeLeft: 0, timeLimit: 0, damageMultiplier: 1,
   reelPhaseMode: 'tap', phaseTimer: 0, phaseTelegraph: false, isHolding: false, tapPulse: 0,
   lastResultSuccess: null, isNewSpecies: false, catchCount: 0, earnedPoints: 0,
@@ -59,8 +62,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ loading: true });
     const pending = readSaved<PendingAction>(PENDING_KEY);
     try {
-      const [catalog, records, economy, products] = await Promise.all([api.fetchCatalog(), api.fetchCollection(), api.fetchEconomy(), api.fetchProducts()]);
-      set({ catalog, collection: Object.fromEntries(records.map(c => [c.species_id, c])), economy, products, usingBackend: true, ready: true });
+      const [catalog, records, economy, products, areas] = await Promise.all([api.fetchCatalog(), api.fetchCollection(), api.fetchEconomy(), api.fetchProducts(), api.fetchAreas()]);
+      set({ catalog, collection: Object.fromEntries(records.map(c => [c.species_id, c])), economy, products, areas, usingBackend: true, ready: true });
     } catch {
       if (!pending) {
         const saved = readSaved<{ economy: Economy; collection: Record<string, CollectionRecord>; testGrantApplied?: boolean }>(MOCK_KEY);
@@ -70,7 +73,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           economy = mockEconomy(economy.balance + mockTestPoints, economy.inventory);
           save(MOCK_KEY, { economy, collection, testGrantApplied: true });
         }
-        set({ usingBackend: false, ready: true, economy, collection, catalog: mockCatalog, products: MOCK_PRODUCTS });
+        set({ usingBackend: false, ready: true, economy, collection, catalog: mockCatalog, products: MOCK_PRODUCTS, areas: mockAreas(mockCatalog, economy.inventory) });
       }
     }
     if (pending) set({ ...pending.context, pending, phase: 'pending', usingBackend: true, ready: true, error: '未確認の操作があります。同じ操作の結果を確認してください。' });
@@ -208,6 +211,20 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!product || s.economy.balance < product.price || (product.kind !== 'consumable' && s.economy.inventory[id])) return;
     set({ economy: mockEconomy(s.economy.balance - product.price, { ...s.economy.inventory, [id]: (s.economy.inventory[id] ?? 0) + 1 }) });
   },
+  // 図鑑から、天体ごとの「釣れやすい場所」をポイントで開示する（rare以上のみ）
+  revealArea: async speciesId => {
+    const s = get();
+    if (s.phase !== 'zukan' || s.busy || s.pending || s.areas[speciesId]) return;
+    if (s.usingBackend) {
+      await get()._run({ kind: 'reveal', body: { request_id: crypto.randomUUID(), species_id: speciesId }, context: contextOf(s) });
+      return;
+    }
+    const entry = s.catalog.find(c => c.id === speciesId);
+    const price = entry && AREA_INFO_PRICES[entry.rarity];
+    const area = entry?.catch_bonus?.area;
+    if (!price || !area || s.economy.balance < price) return;
+    set({ economy: mockEconomy(s.economy.balance - price, { ...s.economy.inventory, [areaInfoKey(speciesId)]: 1 }), areas: { ...s.areas, [speciesId]: area } });
+  },
   retryPending: async () => { const s = get(); if (s.pending && !s.busy) await get()._run(s.pending); },
   _run: async pending => {
     if (get().busy) return;
@@ -232,6 +249,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         await api.castDecision(pending.body);
         const records = await api.fetchCollection();
         set({ ...pending.context, phase: pending.body.decision === 'keep' ? 'gyotaku' : 'idle', collection: Object.fromEntries(records.map(c => [c.species_id, c])) });
+      } else if (pending.kind === 'reveal') {
+        const res = await api.revealArea(pending.body);
+        set({ economy: res.economy, areas: res.areas, phase: 'zukan' });
       } else {
         await api.exchange(pending.body);
         set({ economy: await api.fetchEconomy(), phase: 'shop' });
@@ -242,7 +262,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       // 明確に拒否された操作は終了。通信断・5xxでは結果が不明なので同じIDで再確認する。
       if (error instanceof api.ApiError && error.status >= 400 && error.status < 500) {
         save(PENDING_KEY, null);
-        set({ pending: null, busy: false, phase: pending.kind === 'exchange' ? 'shop' : 'idle', error: '操作を受け付けられませんでした。残高・所持品・試行の有効期限を確認してください。' });
+        set({ pending: null, busy: false, phase: pending.kind === 'exchange' ? 'shop' : pending.kind === 'reveal' ? 'zukan' : 'idle', error: '操作を受け付けられませんでした。残高・所持品・試行の有効期限を確認してください。' });
         try { set({ economy: await api.fetchEconomy() }); } catch { /* 次回操作時に再確認する */ }
       } else set({ busy: false, error: '通信結果を確認できません。同じ操作の結果を再確認してください。' });
     }

@@ -128,6 +128,11 @@ class ExchangeRequest(SQLModel):
     product_id: str
 
 
+class AreaRevealRequest(SQLModel):
+    request_id: str = Field(min_length=1, max_length=100)
+    species_id: str
+
+
 class CastDecisionRequest(SQLModel):
     attempt_id: str
     decision: Literal["keep", "release"]
