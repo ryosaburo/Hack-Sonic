@@ -80,3 +80,23 @@ uvicorn app.main:app --reload   # http://localhost:8000 (Swagger: /docs)
 ```
 
 `backend/.env` の `DATABASE_URL` で接続先DBを切り替える(開発中はSQLite)。
+
+#### 本番DB（Supabase）
+
+1. Supabase でプロジェクトを作り、Project Settings → Database → Connection string から接続文字列を取得する
+   - 常時起動のサーバー（Render / Fly.io など）: **Session pooler**（ポート 5432）
+   - サーバーレス（Vercel Functions など）: **Transaction pooler**（ポート 6543）
+2. 本番のバックエンドの環境変数に設定する（書式は `backend/.env.example`）
+   - `DATABASE_URL`: 取得した接続文字列（`postgresql://...` のままでよい。末尾に `?sslmode=require`）
+   - `CORS_ORIGINS`: 本番のフロントのURL（カンマ区切りで複数可）
+3. フロントのビルド時の環境変数 `VITE_API_BASE` に本番のバックエンドのURLを設定する
+
+テーブルは起動時に自動で作られ、図鑑のデータも `catalog.json` から投入される。Supabase の REST API から
+直接読み書きされないよう、起動時に全テーブルで RLS（ポリシーなし）を有効にしている。
+
+Postgres でテストする場合（CI でも実行している）:
+
+```bash
+createdb sonic_test
+TEST_DATABASE_URL=postgresql://localhost/sonic_test python -m pytest
+```
