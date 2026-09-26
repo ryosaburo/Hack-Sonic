@@ -1,17 +1,5 @@
-/* 図鑑: 星図・天文台の観測台帳。色はすべてこのトークンから取る */
+/* 図鑑: 星図・天文台の観測台帳。色はすべて styles/observatory.css のトークンから取る */
 .zukan-screen {
-  --zk-bg: #0b0f1a;
-  --zk-surface: #101522;
-  --zk-ink: #e4dfd0;
-  --zk-ink-muted: #9c988b;
-  --zk-ink-faint: #5d6070;
-  --zk-rule: #262d3d;
-  --zk-rule-strong: #3a4356;
-  --zk-brass: #b8955a;
-
-  --zk-font-serif: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
-  --zk-font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
-  --zk-radius: 3px;
   --zk-plate: 72px;
 
   position: absolute;
@@ -27,11 +15,6 @@
   height: 100%;
   overflow-y: auto;
   padding: 1.25rem clamp(1rem, 4vw, 2.5rem) 2rem;
-}
-
-.zk-num {
-  font-family: var(--zk-font-mono);
-  font-variant-numeric: tabular-nums;
 }
 
 .zk-symbol {
@@ -554,17 +537,6 @@
 }
 
 /* ---- モーション ---- */
-@keyframes zk-enter {
-  from {
-    opacity: 0;
-    transform: translateY(2px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   /* 魚拓演出（GyotakuReveal）も図鑑の中に描かれるので、図鑑自身の要素だけ止める */
   .zukan-screen,
