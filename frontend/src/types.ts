@@ -1,3 +1,5 @@
+import type { Season } from './engine/seasons';
+
 export type Rarity = 'common' | 'rare' | 'super_rare' | 'legendary';
 
 export interface CatalogEntry {
@@ -10,6 +12,8 @@ export interface CatalogEntry {
   weight: number;
   capture_date: string;
   flavor_text: string;
+  // 釣れる季節。未指定なら四季を通して釣れる
+  seasons?: Season[];
 }
 
 export interface CollectionRecord {

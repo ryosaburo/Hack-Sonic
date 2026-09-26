@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { useGameStore } from '../store/gameStore';
 import {
   Camera,
@@ -24,6 +24,15 @@ import {
   playSuccess,
   playFailure,
 } from '../engine/audio';
+import {
+  SEASON_DESCRIPTION,
+  SEASON_LABEL,
+  SEASON_LOOKS,
+  SEASON_ORDER,
+  blendLookInto,
+  cloneLook,
+  rgba,
+} from '../engine/seasons';
 import { RARITY_CONFIG } from '../types';
 import './FishingScene.css';
 
@@ -43,6 +52,8 @@ const SPIN_FRICTION = 0.25;
 const RIVER_BOUND = 1.8;
 const KEY_PAN_SPEED = 520;
 const PAN_FRICTION = 3.5;
+// 季節を切り替えたとき、夜空が移ろう速さ（1/s）
+const SEASON_BLEND_RATE = 1.6;
 // フリック時の慣性速度の上限（world units/s）
 const MAX_FLING_SPEED = 2600;
 
@@ -101,6 +112,7 @@ export function FishingScene() {
   const zoneRef = useRef<HTMLSpanElement | null>(null);
   const densityFillRef = useRef<HTMLDivElement | null>(null);
   const [explored, setExplored] = useState(false);
+  const [seasonChanged, setSeasonChanged] = useState(false);
 
   const engineRef = useRef({
     camera: Object.assign(new Camera(), { y: START_PAN_Y, targetY: START_PAN_Y }),
@@ -129,6 +141,8 @@ export function FishingScene() {
     lureSpinVel: 0,
     slack: 0,
     dust: makeDust(40),
+    // 現在の見た目。季節を切り替えると目標の季節へ毎フレーム少しずつ寄っていく
+    look: cloneLook(SEASON_LOOKS[useGameStore.getState().season]),
     prevPhase: 'idle',
     prevReelMode: 'tap' as 'tap' | 'hold',
     prevTelegraph: false,
@@ -142,6 +156,8 @@ export function FishingScene() {
   const reelPhaseMode = useGameStore((s) => s.reelPhaseMode);
   const phaseTelegraph = useGameStore((s) => s.phaseTelegraph);
   const currentEntry = useGameStore((s) => s.currentEntry);
+  const season = useGameStore((s) => s.season);
+  const setSeason = useGameStore((s) => s.setSeason);
   const startCast = useGameStore((s) => s.startCast);
   const pressStart = useGameStore((s) => s.pressStart);
   const pressEnd = useGameStore((s) => s.pressEnd);
@@ -402,6 +418,8 @@ export function FishingScene() {
       }
       e.camera.update(dt);
       const shakeOffset = e.shake.update(dt, t);
+      blendLookInto(e.look, SEASON_LOOKS[state.season], 1 - Math.exp(-SEASON_BLEND_RATE * dt));
+      const look = e.look;
 
       // ---- 現在地HUD（React再描画を避けてDOMを直接更新） ----
       if (state.phase === 'idle') {
@@ -426,15 +444,15 @@ export function FishingScene() {
       ctx.scale(dpr, dpr);
       const cw = wrapper!.clientWidth;
       const ch = wrapper!.clientHeight;
-      ctx.fillStyle = '#05060f';
+      ctx.fillStyle = rgba(look.background, 1);
       ctx.fillRect(0, 0, cw, ch);
 
-      drawParallaxStars(ctx, e.camera, cw, ch, t);
+      drawParallaxStars(ctx, e.camera, cw, ch, t, look);
 
       e.camera.apply(ctx, cw, ch, shakeOffset);
 
-      drawMilkyWay(ctx, e.camera, cw, ch, t);
-      updateAndDrawDust(ctx, e.dust, e.camera, dt);
+      drawMilkyWay(ctx, e.camera, cw, ch, t, look);
+      updateAndDrawDust(ctx, e.dust, e.camera, dt, look);
 
       // 待機中は「ここに投げる」投入点を示す
       if (state.phase === 'idle') {
@@ -498,6 +516,15 @@ export function FishingScene() {
       ctx.stroke();
 
       e.camera.restore(ctx);
+
+      // 春霞：画面下ほど濃くかかる淡い霞
+      if (look.hazeAlpha > 0.002) {
+        const haze = ctx.createLinearGradient(0, 0, 0, ch);
+        haze.addColorStop(0, rgba(look.hazeColor, look.hazeAlpha * 0.4));
+        haze.addColorStop(1, rgba(look.hazeColor, look.hazeAlpha * 2));
+        ctx.fillStyle = haze;
+        ctx.fillRect(0, 0, cw, ch);
+      }
       ctx.restore();
 
       raf = requestAnimationFrame(loop);
@@ -612,9 +639,10 @@ export function FishingScene() {
   const config = currentEntry ? RARITY_CONFIG[currentEntry.rarity] : null;
   const isReeling = phase === 'reeling';
   const isIdle = phase === 'idle';
+  const seasonStyle = { '--season-accent': rgba(SEASON_LOOKS[season].accent, 1) } as CSSProperties;
 
   return (
-    <div className="fishing-scene">
+    <div className="fishing-scene" data-season={season} style={seasonStyle}>
       <div
         ref={wrapperRef}
         className={`scene-canvas-wrapper ${isIdle ? 'explorable' : ''}`}
@@ -647,7 +675,15 @@ export function FishingScene() {
               <p className="title-sub">星々の海で、天体を釣り上げよう</p>
             </div>
 
+            {seasonChanged && (
+              <div key={season} className="season-banner">
+                <span className="season-banner-name">{SEASON_LABEL[season]}の天の川</span>
+                <span className="season-banner-desc">{SEASON_DESCRIPTION[season]}</span>
+              </div>
+            )}
+
             <div className="explore-hud">
+              <span className="explore-season">{SEASON_LABEL[season]}の天の川</span>
               <span className="explore-zone" ref={zoneRef} />
               <span className="explore-coord">
                 座標 <span ref={coordRef} />
@@ -658,6 +694,26 @@ export function FishingScene() {
             </div>
 
             <div className="idle-bottom">
+              <div className="season-picker" role="radiogroup" aria-label="季節">
+                {SEASON_ORDER.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    role="radio"
+                    aria-checked={s === season}
+                    className={`season-option season-option-${s} ${s === season ? 'active' : ''}`}
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      if (s === season) return;
+                      setSeason(s);
+                      setSeasonChanged(true);
+                      setExplored(true);
+                    }}
+                  >
+                    {SEASON_LABEL[s]}
+                  </button>
+                ))}
+              </div>
               <p className="explore-hint">ドラッグ・スクロール・矢印キーで天の川を移動</p>
               <button
                 type="button"

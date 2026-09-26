@@ -1,6 +1,8 @@
 // 仕様書 12章・13章: 「実際に操作している感」を高める物理表現レイヤー。
 // ゲージ制のロジック自体はstore側にあり、ここは見た目だけを物理っぽく変換する。
 
+import { rgba, type SeasonLook } from './seasons';
+
 export function springTo(
   current: number,
   target: number,
@@ -104,6 +106,7 @@ export class ShakeController {
 
 // 無重力の釣り糸：下へ垂れず、たるんだ分は糸に沿って波打ちながらゆっくりうねる。
 // slack=0で一直線（張っている）、大きいほど大きくうねる。
+// さらに天の川の流れ（恒星風）に晒されて、中間点が微弱にそよぐ。
 export function drawFishingLine(
   ctx: CanvasRenderingContext2D,
   rodTip: Vec2,
@@ -127,7 +130,12 @@ export function drawFishingLine(
       0.3 * Math.sin(Math.PI * 4.6 * s - t * 1.1 + 1.3) +
       0.15 * Math.sin(t * 0.35 + 2.1);
     const off = slack * envelope * wave;
-    ctx.lineTo(rodTip.x + dx * s + nx * off, rodTip.y + dy * s + ny * off);
+    const px = rodTip.x + dx * s + nx * off;
+    const py = rodTip.y + dy * s + ny * off;
+    // 両端（竿先・ルアー）は固定し、中間点ほど強く風を受ける
+    const wind = stellarWind(px, py, t);
+    const windEnvelope = Math.pow(envelope, 1.5);
+    ctx.lineTo(px + wind.x * windEnvelope, py + wind.y * windEnvelope);
   }
   ctx.strokeStyle = 'rgba(255,255,255,0.6)';
   ctx.lineWidth = 1.5;
@@ -166,9 +174,15 @@ export function makeDust(count: number): DustMote[] {
 }
 
 // ワールド座標で描画（camera.apply の後に呼ぶ）。カメラ周辺の箱の中でループさせる。
-export function updateAndDrawDust(ctx: CanvasRenderingContext2D, motes: DustMote[], camera: Camera, dt: number) {
+export function updateAndDrawDust(
+  ctx: CanvasRenderingContext2D,
+  motes: DustMote[],
+  camera: Camera,
+  dt: number,
+  look: SeasonLook,
+) {
   const half = DUST_FIELD / 2;
-  ctx.strokeStyle = 'rgba(200,220,255,0.45)';
+  ctx.strokeStyle = rgba(look.dustColor, 0.45);
   ctx.lineWidth = 1;
   for (const m of motes) {
     m.x += m.vx * dt;
@@ -197,8 +211,9 @@ export function riverHalfWidth(x: number): number {
 }
 
 // 0〜1。1に近いほど天の川の本流（星が濃い）。
-export function milkyWayDensity(x: number, y: number): number {
-  const d = (y - riverCenterY(x)) / riverHalfWidth(x);
+// widthScale は季節による見た目の太さ。釣り場の判定には既定値(1)を使う。
+export function milkyWayDensity(x: number, y: number, widthScale = 1): number {
+  const d = (y - riverCenterY(x)) / (riverHalfWidth(x) * widthScale);
   const clump = 0.75 + 0.25 * Math.sin(x / 310 + Math.sin(y / 230) * 2);
   return Math.exp(-d * d * 1.6) * clump;
 }
@@ -222,7 +237,14 @@ const PARALLAX_LAYERS = [
 ];
 
 // 遠景の星（画面座標で描画。カメラ移動に対して遅れて動くことで奥行きを出す）
-export function drawParallaxStars(ctx: CanvasRenderingContext2D, camera: Camera, w: number, h: number, t: number) {
+export function drawParallaxStars(
+  ctx: CanvasRenderingContext2D,
+  camera: Camera,
+  w: number,
+  h: number,
+  t: number,
+  look: SeasonLook,
+) {
   ctx.fillStyle = '#ffffff';
   for (const layer of PARALLAX_LAYERS) {
     const lx = camera.x * layer.depth;
@@ -237,7 +259,7 @@ export function drawParallaxStars(ctx: CanvasRenderingContext2D, camera: Camera,
         for (let i = 0; i < layer.count; i++) {
           const sx = (ix + rand()) * layer.cell - lx + w / 2;
           const sy = (iy + rand()) * layer.cell - ly + h / 2;
-          const twinkle = 0.75 + 0.25 * Math.sin(t * (1 + rand() * 2) + rand() * 6.28);
+          const twinkle = 1 - look.twinkle * 0.6 * (1 - Math.sin(t * (1 + rand() * 2) + rand() * 6.28));
           ctx.globalAlpha = layer.alpha * twinkle;
           ctx.beginPath();
           ctx.arc(sx, sy, layer.radius, 0, Math.PI * 2);
@@ -249,57 +271,142 @@ export function drawParallaxStars(ctx: CanvasRenderingContext2D, camera: Camera,
   ctx.globalAlpha = 1;
 }
 
-const NEBULA_COLORS = ['120,150,255', '170,120,255', '255,140,200', '255,210,150', '120,220,255'];
 const NEBULA_CELL = 240;
 const RIVER_STAR_CELL = 160;
 const RIVER_FLOW_SPEED = 14;
 
+// 天の川の流れの位相（流れに沿った移動量）。星の流れと恒星風のうねりが同じ値を参照して同期する。
+export function riverFlowPhase(t: number): number {
+  return t * RIVER_FLOW_SPEED;
+}
+
+// 恒星風（プラズマの流れ）：天の川の流れに乗って伝わる微弱なサイン波。
+// 流れの位相から波の位相を決めるので、うねりの山は星と同じ速さで下流へ運ばれていく。
+// 向きは川の接線方向、強さは本流ほど強く、外縁の闇でもわずかに残る。
+const STELLAR_WIND_AMPLITUDE = 5;
+const STELLAR_WIND_WAVELENGTH = 90;
+const STELLAR_WIND_RIPPLE = 140;
+
+export function stellarWind(x: number, y: number, t: number): Vec2 {
+  const phase = ((x - riverFlowPhase(t)) / STELLAR_WIND_WAVELENGTH) * Math.PI * 2 + y / STELLAR_WIND_RIPPLE;
+  const gust = Math.sin(phase) * 0.7 + Math.sin(phase * 1.9 + t * 1.3) * 0.3;
+  const strength = STELLAR_WIND_AMPLITUDE * (0.3 + 0.7 * Math.min(1, milkyWayDensity(x, y))) * gust;
+  // 川の中心線の傾きから接線ベクトルを求める
+  const slope = (riverCenterY(x + 1) - riverCenterY(x - 1)) / 2;
+  const tangentLen = Math.hypot(1, slope);
+  return { x: strength / tangentLen, y: (strength * slope) / tangentLen };
+}
+
+const BAND_CELL = 200;
+const RIFT_CELL = 70;
+const BRIGHT_STAR_CELL = 400;
+const GALAXY_CELL = 900;
+
 // 天の川本体（ワールド座標で描画するので camera.apply の後に呼ぶ）
-export function drawMilkyWay(ctx: CanvasRenderingContext2D, camera: Camera, w: number, h: number, t: number) {
+// 見た目は季節ごとの look で変わる（形・流れは季節によらず共通）
+export function drawMilkyWay(
+  ctx: CanvasRenderingContext2D,
+  camera: Camera,
+  w: number,
+  h: number,
+  t: number,
+  look: SeasonLook,
+) {
   const margin = 400;
   const x0 = camera.x - w / (2 * camera.zoom) - margin;
   const x1 = camera.x + w / (2 * camera.zoom) + margin;
   const y0 = camera.y - h / (2 * camera.zoom) - margin;
   const y1 = camera.y + h / (2 * camera.zoom) + margin;
+  const density = (x: number, y: number) => milkyWayDensity(x, y, look.widthScale);
 
-  // 星雲のにじみ
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
+
+  // 川の中心線に沿った帯状の輝き（夏は銀河中心のバルジで黄金色に、春は霞んだ桜色に光る）
+  if (look.bandAlpha > 0.005) {
+    for (let ix = Math.floor(x0 / BAND_CELL); ix <= Math.floor(x1 / BAND_CELL); ix++) {
+      const cx = (ix + 0.5) * BAND_CELL;
+      const cy = riverCenterY(cx);
+      const r = riverHalfWidth(cx) * look.widthScale * 1.1;
+      if (cy + r < y0 || cy - r > y1) continue;
+      const alpha = look.bandAlpha * (0.65 + 0.35 * Math.sin(cx / 700 + 0.4));
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, rgba(look.bandGlow, alpha));
+      g.addColorStop(1, rgba(look.bandGlow, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    }
+  }
+
+  // 星雲のにじみ
   for (let ix = Math.floor(x0 / NEBULA_CELL); ix <= Math.floor(x1 / NEBULA_CELL); ix++) {
     for (let iy = Math.floor(y0 / NEBULA_CELL); iy <= Math.floor(y1 / NEBULA_CELL); iy++) {
       const rand = cellRandom(ix, iy, 101);
       const cx = (ix + rand()) * NEBULA_CELL;
       const cy = (iy + rand()) * NEBULA_CELL;
-      const density = milkyWayDensity(cx, cy);
-      if (density < 0.05) continue;
+      const d = density(cx, cy);
+      if (d < 0.05) continue;
       const r = 220 + rand() * 260;
-      const color = NEBULA_COLORS[Math.floor(rand() * NEBULA_COLORS.length)];
-      const alpha = density * (0.12 + rand() * 0.12);
+      const color = look.nebulaColors[Math.floor(rand() * look.nebulaColors.length)];
+      const alpha = Math.min(0.5, d * (0.12 + rand() * 0.12) * look.nebulaAlpha);
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      g.addColorStop(0, `rgba(${color},${alpha})`);
-      g.addColorStop(1, `rgba(${color},0)`);
+      g.addColorStop(0, rgba(color, alpha));
+      g.addColorStop(1, rgba(color, 0));
       ctx.fillStyle = g;
       ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    }
+  }
+
+  // 天の川から離れた暗い空に浮かぶ系外銀河（春の銀河団、秋のアンドロメダ）
+  if (look.galaxyRate > 0.01) {
+    for (let ix = Math.floor(x0 / GALAXY_CELL); ix <= Math.floor(x1 / GALAXY_CELL); ix++) {
+      for (let iy = Math.floor(y0 / GALAXY_CELL); iy <= Math.floor(y1 / GALAXY_CELL); iy++) {
+        const rand = cellRandom(ix, iy, 404);
+        // 出現率が上がるにつれて閾値の低いものから順にフェードインする
+        const fade = Math.min(1, (look.galaxyRate - rand()) * 4);
+        const cx = (ix + rand()) * GALAXY_CELL;
+        const cy = (iy + rand()) * GALAXY_CELL;
+        const dark = 1 - Math.min(1, density(cx, cy) * 3);
+        if (fade <= 0 || dark <= 0) continue;
+        const r = 26 + rand() * 50;
+        const tilt = rand() * Math.PI;
+        const flat = 0.25 + rand() * 0.35;
+        const color = look.starColors[Math.floor(rand() * look.starColors.length)];
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(tilt);
+        ctx.scale(1, flat);
+        const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+        g.addColorStop(0, rgba(color, 0.55 * fade * dark));
+        g.addColorStop(0.18, rgba(color, 0.22 * fade * dark));
+        g.addColorStop(1, rgba(color, 0));
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
     }
   }
   ctx.restore();
 
   // 川の流れに沿ってゆっくり流れる星々（密度は固定座標で評価するので川の形は動かない）
-  const flow = t * RIVER_FLOW_SPEED;
-  ctx.fillStyle = '#ffffff';
+  const flow = riverFlowPhase(t);
+  const starStyles = look.starColors.map((c) => rgba(c, 1));
   for (let ix = Math.floor((x0 - flow) / RIVER_STAR_CELL); ix <= Math.floor((x1 - flow) / RIVER_STAR_CELL); ix++) {
     for (let iy = Math.floor(y0 / RIVER_STAR_CELL); iy <= Math.floor(y1 / RIVER_STAR_CELL); iy++) {
       const cellX = (ix + 0.5) * RIVER_STAR_CELL + flow;
       const cellY = (iy + 0.5) * RIVER_STAR_CELL;
-      const count = Math.round(Math.pow(milkyWayDensity(cellX, cellY), 1.2) * 26);
+      const count = Math.round(Math.pow(density(cellX, cellY), 1.2) * 26 * look.starDensity);
       if (count === 0) continue;
       const rand = cellRandom(ix, iy, 202);
       for (let i = 0; i < count; i++) {
         const sx = (ix + rand()) * RIVER_STAR_CELL + flow;
         const sy = (iy + rand()) * RIVER_STAR_CELL;
         const radius = 0.6 + rand() * rand() * 2.2;
-        const twinkle = 0.6 + 0.4 * Math.sin(t * (1.5 + rand() * 3) + rand() * 6.28);
-        ctx.globalAlpha = (0.35 + rand() * 0.55) * twinkle;
+        const twinkle = 1 - look.twinkle * (1 - Math.sin(t * (1.5 + rand() * 3) + rand() * 6.28));
+        ctx.globalAlpha = Math.max(0, (0.35 + rand() * 0.55) * twinkle);
+        ctx.fillStyle = starStyles[Math.floor(rand() * starStyles.length)];
         ctx.beginPath();
         ctx.arc(sx, sy, radius, 0, Math.PI * 2);
         ctx.fill();
@@ -307,4 +414,69 @@ export function drawMilkyWay(ctx: CanvasRenderingContext2D, camera: Camera, w: n
     }
   }
   ctx.globalAlpha = 1;
+
+  // 暗黒星雲の裂け目。川の中心付近を2本の暗い帯が途切れながら走り、星と光を覆い隠す（夏に最も濃い）
+  if (look.riftStrength > 0.02) {
+    for (let ix = Math.floor(x0 / RIFT_CELL); ix <= Math.floor(x1 / RIFT_CELL); ix++) {
+      const rand = cellRandom(ix, 0, 303);
+      const cx = (ix + rand()) * RIFT_CELL;
+      const half = riverHalfWidth(cx) * look.widthScale;
+      const center = riverCenterY(cx);
+      for (let lane = 0; lane < 2; lane++) {
+        // 2本の帯は付いたり離れたりしながら、ところどころで途切れる
+        const offset = half * (lane === 0 ? 0.08 : -0.22) * (1 + Math.sin(cx / 520 + lane * 2.3));
+        const presence = 0.5 + 0.5 * Math.sin(cx / (lane === 0 ? 380 : 260) + lane * 1.7);
+        if (presence < 0.15) continue;
+        const cy = center + offset + (rand() - 0.5) * half * 0.12;
+        const r = half * (lane === 0 ? 0.2 : 0.13) * (0.7 + rand() * 0.6);
+        if (cy + r < y0 || cy - r > y1) continue;
+        const alpha = look.riftStrength * presence * 0.6;
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        g.addColorStop(0, rgba(look.background, alpha));
+        g.addColorStop(1, rgba(look.background, 0));
+        ctx.fillStyle = g;
+        ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+      }
+    }
+  }
+
+  // 一等星（光条つき）。冬のダイヤモンドのように、川の濃さに関係なく空全体に散らばる
+  if (look.brightStarRate > 0.01) {
+    for (let ix = Math.floor(x0 / BRIGHT_STAR_CELL); ix <= Math.floor(x1 / BRIGHT_STAR_CELL); ix++) {
+      for (let iy = Math.floor(y0 / BRIGHT_STAR_CELL); iy <= Math.floor(y1 / BRIGHT_STAR_CELL); iy++) {
+        const rand = cellRandom(ix, iy, 505);
+        const fade = Math.min(1, (look.brightStarRate - rand()) * 4);
+        const sx = (ix + rand()) * BRIGHT_STAR_CELL;
+        const sy = (iy + rand()) * BRIGHT_STAR_CELL;
+        const color = look.brightStarColors[Math.floor(rand() * look.brightStarColors.length)];
+        const size = 1.6 + rand() * 1.4;
+        const speed = 2 + rand() * 4;
+        const seed = rand() * 6.28;
+        if (fade <= 0) continue;
+        const twinkle = 1 - look.twinkle * 0.7 * (1 - Math.sin(t * speed + seed));
+        const alpha = fade * twinkle;
+        const glowR = size * 7;
+        const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, glowR);
+        g.addColorStop(0, rgba(color, 0.9 * alpha));
+        g.addColorStop(0.15, rgba(color, 0.35 * alpha));
+        g.addColorStop(1, rgba(color, 0));
+        ctx.fillStyle = g;
+        ctx.fillRect(sx - glowR, sy - glowR, glowR * 2, glowR * 2);
+        // 光条（またたきに合わせて伸び縮みする）
+        const spike = size * (5 + 5 * twinkle);
+        ctx.strokeStyle = rgba(color, 0.6 * alpha);
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(sx - spike, sy);
+        ctx.lineTo(sx + spike, sy);
+        ctx.moveTo(sx, sy - spike);
+        ctx.lineTo(sx, sy + spike);
+        ctx.stroke();
+        ctx.fillStyle = rgba([255, 255, 255], alpha);
+        ctx.beginPath();
+        ctx.arc(sx, sy, size * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
 }
