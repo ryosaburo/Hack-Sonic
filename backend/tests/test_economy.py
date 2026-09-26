@@ -88,6 +88,7 @@ def test_exchange_idempotency_permanent_and_insufficient(game):
         assert response.status_code == 200
         assert response.json()['balance'] == 0
         assert response.json()['inventory']['time_extension'] == 1
+        assert response.json()['equipped']['time_extension'] is False
     assert client.post('/api/economy/exchange', headers=headers, json={**body, 'product_id': 'lure'}).status_code == 409
     for product in ['time_extension', 'lure']:
         assert client.post('/api/economy/exchange', headers=headers, json={'request_id': str(uuid4()), 'product_id': product}).status_code == 409
@@ -109,10 +110,19 @@ def test_cast_consumption_replay_gear_and_foreign_attempt(game):
     fund(user_id, inventory={'lure': 1, 'time_extension': 1, 'power_reel': 1})
     body = {'request_id': str(uuid4()), 'use_lure': True}
     result = start(client, headers, **body)
-    assert result['time_limit'] == 25
-    assert result['damage_multiplier'] == 1.25
+    assert result['time_limit'] == 20
+    assert result['damage_multiplier'] == 1
     assert result['economy']['inventory']['lure'] == 0
     assert start(client, headers, **body) == result
+    for product in ('time_extension', 'power_reel'):
+        equipped = client.put('/api/economy/equipment', headers=headers, json={'product_id': product, 'equipped': True})
+        assert equipped.status_code == 200
+        assert equipped.json()['equipped'][product] is True
+    # 装備を変更しても開始済みの試行にはさかのぼって適用しない。
+    assert start(client, headers, **body) == result
+    geared = start(client, headers)
+    assert geared['time_limit'] == 25
+    assert geared['damage_multiplier'] == 1.25
     assert client.post('/api/cast/start', headers=headers, json={'use_lure': True}).status_code == 409
     assert client.post('/api/cast/start', headers=headers, json={**body, 'use_lure': False}).status_code == 409
     other = {'X-Device-Id': str(uuid4())}
@@ -121,6 +131,32 @@ def test_cast_consumption_replay_gear_and_foreign_attempt(game):
     assert failed['economy']['inventory']['lure'] == 0
     assert failed['economy']['inventory']['time_extension'] == 1
     assert start(client, headers)['damage_multiplier'] == 1.25
+
+
+def test_equipment_requires_ownership_and_persists_toggle(game):
+    client, headers, user_id, _ = game
+    assert client.put('/api/economy/equipment', headers=headers, json={'product_id': 'time_extension', 'equipped': True}).status_code == 409
+    assert client.put('/api/economy/equipment', headers=headers, json={'product_id': 'lure', 'equipped': True}).status_code == 422
+    fund(user_id, inventory={'time_extension': 1, 'power_reel': 1})
+    assert start(client, headers)['time_limit'] == 20
+    assert start(client, headers)['damage_multiplier'] == 1
+
+    clock = {'product_id': 'time_extension', 'equipped': True}
+    for _ in range(2):
+        response = client.put('/api/economy/equipment', headers=headers, json=clock)
+        assert response.status_code == 200
+        assert response.json()['equipped'] == {'time_extension': True, 'power_reel': False}
+    assert start(client, headers)['time_limit'] == 25
+    assert start(client, headers)['damage_multiplier'] == 1
+
+    client.put('/api/economy/equipment', headers=headers, json={'product_id': 'power_reel', 'equipped': True})
+    assert start(client, headers)['damage_multiplier'] == 1.25
+    clock['equipped'] = False
+    client.put('/api/economy/equipment', headers=headers, json=clock)
+    assert start(client, headers)['time_limit'] == 20
+    assert start(client, headers)['damage_multiplier'] == 1.25
+    with Session(engine) as session:
+        assert session.get(Wallet, user_id).equipped == {'time_extension': False, 'power_reel': True}
 
 
 def test_expired_attempt_and_invalid_coordinates(game):

@@ -46,6 +46,9 @@ def _add_missing_columns():
     if "test_grant_applied" not in wallet_columns:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE wallet ADD COLUMN test_grant_applied BOOLEAN NOT NULL DEFAULT FALSE"))
+    if "equipped" not in wallet_columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE wallet ADD COLUMN equipped JSON NOT NULL DEFAULT '{}'"))
 
 
 # catalog.json を正として図鑑テーブルを揃える。初回は全件投入し、既存DBでも

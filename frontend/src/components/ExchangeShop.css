@@ -1,6 +1,5 @@
 .economy-hud { position: absolute; left: 16px; top: 16px; z-index: 6; display: grid; gap: 8px; color: #eaf2ff; font-size: .8rem; max-width: calc(100% - 115px); }
 .economy-hud label { display: flex; align-items: center; gap: 4px; padding: 5px; border-radius: 8px; background: #080d20d9; }
-.economy-hud small { background: #080d20d9; padding: 4px; border-radius: 6px; }
 
 /* 交換所: 図鑑と同じ観測台帳風。色はすべて styles/observatory.css のトークンから取る */
 .exchange-shop { width: min(760px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); box-sizing: border-box; overflow: auto; border: 1px solid var(--zk-rule-strong); border-radius: 2px; padding: 1.4rem 1.6rem 1.6rem; background: var(--zk-bg); color: var(--zk-ink); }
@@ -59,7 +58,7 @@ button:disabled { opacity: .5; cursor: default; }
   .exchange-shop { padding: 1.1rem 1rem 1.3rem; }
   .shop-subtitle { display: block; margin: .3rem 0 0; }
   .shop-product { grid-template-columns: 2.6rem minmax(0, 1fr); row-gap: .6rem; }
-  .shop-purchase { grid-column: 2; flex-direction: row; align-items: center; justify-content: space-between; }
+  .shop-purchase { grid-column: 2; flex-direction: row; align-items: center; justify-content: flex-end; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -5,7 +5,7 @@ import './ExchangeShop.css';
 
 const KIND_LABEL: Record<string, string> = {
   consumable: '消耗品・1投分',
-  permanent: '永久装備・自動装備',
+  permanent: '永久装備・釣り画面で切替',
   information: '釣り場情報・永続',
 };
 
@@ -75,9 +75,10 @@ export function EconomyHud() {
     <button className="secondary-btn" disabled={!s.ready || s.busy} onClick={s.openShop}>交換所 · {s.economy.balance} pt</button>
     <label><input type="checkbox" checked={s.useLure} disabled={!s.ready || s.busy || !s.economy.inventory.lure} onChange={e => s.setUseLure(e.target.checked)} />
       誘引ルアーを使う（{s.economy.inventory.lure ?? 0}個）</label>
-    {(s.economy.inventory.time_extension > 0 || s.economy.inventory.power_reel > 0) && <small>
-      装備中：{[s.economy.inventory.time_extension && '星時計', s.economy.inventory.power_reel && '強化リール'].filter(Boolean).join('・')}
-    </small>}
+    <label><input type="checkbox" checked={Boolean(s.economy.equipped?.time_extension)} disabled={!s.ready || s.busy || !s.economy.inventory.time_extension} onChange={e => void s.setEquipment('time_extension', e.target.checked)} />
+      星時計を装備{!s.economy.inventory.time_extension && '（未所持）'}</label>
+    <label><input type="checkbox" checked={Boolean(s.economy.equipped?.power_reel)} disabled={!s.ready || s.busy || !s.economy.inventory.power_reel} onChange={e => void s.setEquipment('power_reel', e.target.checked)} />
+      強化リールを装備{!s.economy.inventory.power_reel && '（未所持）'}</label>
   </div>;
 }
 
