@@ -38,22 +38,26 @@ def _add_missing_columns():
             conn.execute(text("ALTER TABLE catalog ADD COLUMN seasons JSON"))
 
 
-def seed_catalog_if_empty():
+# catalog.json を正として図鑑テーブルを揃える。初回は全件投入し、既存DBでも
+# 画像・クレジット・季節などの変更や、後から追加した天体が起動時に反映されるようにする。
+# シードから消えた天体は、捕獲記録から参照されている可能性があるので削除しない
+# （RETIRED_CATALOG_IDS に載せた天体だけは収集記録ごと削除する）。
+def sync_catalog_from_seed():
     raw = json.loads(CATALOG_SEED_PATH.read_text(encoding="utf-8"))
     with Session(engine) as session:
-        existing = session.exec(select(CatalogEntry)).first()
-        if existing:
-            _remove_retired_entries(session)
-            _sync_seasons(session, raw)
-            _add_new_entries(session, raw)
-            return
+        _remove_retired_entries(session)
         for item in raw:
-            session.add(_to_entry(item))
+            # point / catch_bonus などフロント用の項目はテーブルに列がないので同期しない
+            fields = {key: item.get(key) for key in CatalogEntry.model_fields}
+            fields["capture_date"] = date.fromisoformat(item["capture_date"])
+            entry = session.get(CatalogEntry, item["id"])
+            if entry is None:
+                session.add(CatalogEntry(**fields))
+                continue
+            for key, value in fields.items():
+                if getattr(entry, key) != value:
+                    setattr(entry, key, value)
         session.commit()
-
-
-def _to_entry(item: dict) -> CatalogEntry:
-    return CatalogEntry(**{**item, "capture_date": date.fromisoformat(item["capture_date"])})
 
 
 def _remove_retired_entries(session: Session):
@@ -68,27 +72,3 @@ def _remove_retired_entries(session: Session):
     for entry in retired:
         session.delete(entry)
     session.commit()
-
-
-# シードに後から足された天体を既存DBにも追加する（既存の行は上書きしない）
-def _add_new_entries(session: Session, raw: list[dict]):
-    known = set(session.exec(select(CatalogEntry.id)).all())
-    new_items = [item for item in raw if item["id"] not in known]
-    for item in new_items:
-        session.add(_to_entry(item))
-    if new_items:
-        session.commit()
-
-
-# 既存DBにもシードの季節設定を反映する（季節限定の天体を後から指定できるように）
-def _sync_seasons(session: Session, raw: list[dict]):
-    changed = False
-    for item in raw:
-        entry = session.get(CatalogEntry, item["id"])
-        seasons = item.get("seasons")
-        if entry and entry.seasons != seasons:
-            entry.seasons = seasons
-            session.add(entry)
-            changed = True
-    if changed:
-        session.commit()

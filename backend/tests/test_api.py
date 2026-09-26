@@ -3,7 +3,7 @@ import json
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
-from app.database import CATALOG_SEED_PATH, RETIRED_CATALOG_IDS, engine, seed_catalog_if_empty
+from app.database import CATALOG_SEED_PATH, RETIRED_CATALOG_IDS, engine, sync_catalog_from_seed
 from app.main import app
 from app.models import CatalogEntry, Collection, User
 
@@ -35,7 +35,7 @@ def test_seed_adds_new_entries_to_existing_db():
             session.delete(session.get(CatalogEntry, added_later))
             session.commit()
 
-        seed_catalog_if_empty()
+        sync_catalog_from_seed()
 
         ids = {e["id"] for e in client.get("/api/catalog").json()}
         assert ids == set(SEED_IDS)
@@ -53,7 +53,7 @@ def test_seed_removes_retired_entries_and_their_records():
             session.add(Collection(user_id=user.id, species_id=RETIRED_CATALOG_IDS[0]))
             session.commit()
 
-        seed_catalog_if_empty()
+        sync_catalog_from_seed()
 
         ids = {e["id"] for e in client.get("/api/catalog").json()}
         assert RETIRED_CATALOG_IDS[0] not in ids

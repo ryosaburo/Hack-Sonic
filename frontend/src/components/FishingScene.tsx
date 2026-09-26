@@ -21,6 +21,7 @@ import {
   playBite,
   playPhaseWarning,
   playPhaseSwitch,
+  playLineTug,
   playSuccess,
   playFailure,
 } from '../engine/audio';
@@ -47,6 +48,17 @@ const CAST_DAMPING = 2.4;
 const BODY_STIFFNESS = 3;
 const BODY_DAMPING = 1.6;
 const SPIN_FRICTION = 0.25;
+
+// 糸の張力。張るときは一瞬で張り詰め、緩むときはゆっくり戻る（「グッ」と引かれる感触の非対称さ）
+const TENSION_RISE_RATE = 16;
+const TENSION_FALL_RATE = 3.5;
+// 糸の震え（弦のような振動）の減衰の速さ
+const LINE_VIB_DECAY = 5;
+// 糸の横ぶれ。獲物が左右に走ると糸の中ほどが遅れてついていき、張った糸が左右に揺り戻す
+const LINE_BOW_STIFFNESS = 38;
+const LINE_BOW_DAMPING = 3.2;
+const LINE_BOW_LAG = 0.3;
+const LINE_BOW_MAX = 64;
 
 // 着水点が天の川の中心からこの倍率×川幅より外に出ないようにする（迷子防止）
 const RIVER_BOUND = 1.8;
@@ -140,6 +152,13 @@ export function FishingScene() {
     lureSpin: 0,
     lureSpinVel: 0,
     slack: 0,
+    // 糸の張力（0=たるみ, 1=張り詰め, 1超=限界近く）と、引かれた瞬間の震えの振幅
+    lineTension: 0,
+    lineVib: 0,
+    // 糸の中ほどの横方向のふくらみ（+は糸の法線方向）と、次に獲物が走る向き（左右交互）
+    lineBow: 0,
+    lineBowVel: 0,
+    pullSide: 1,
     dust: makeDust(40),
     // 現在の見た目。季節を切り替えると目標の季節へ毎フレーム少しずつ寄っていく
     look: cloneLook(SEASON_LOOKS[useGameStore.getState().season]),
@@ -276,8 +295,19 @@ export function FishingScene() {
           e.camera.targetZoom = 1.0;
         } else if (state.phase === 'reeling') {
           playBite();
+          playLineTug(1);
           e.shake.add(0.15);
           e.camera.targetZoom = 0.95;
+          // アタリの瞬間、獲物が釣り人から離れる向きへ一気に走り、糸が張り詰める
+          const biteBase = rodBaseOf(e);
+          const bite = unitVector(e.lureX - biteBase.x, e.lureY - biteBase.y);
+          e.lureVX += bite.x * 200;
+          e.lureVY += bite.y * 200;
+          e.floatVX += bite.x * 60;
+          e.floatVY += bite.y * 60;
+          e.rodBendVel += 70;
+          e.lineTension = 1.1;
+          e.lineVib = 9;
         } else if (state.phase === 'result') {
           if (state.lastResultSuccess) {
             const rarity = state.currentEntry?.rarity ?? 'common';
@@ -332,14 +362,15 @@ export function FishingScene() {
 
       // 竿の向き：普段は宙でゆらりと揺れ、巻き上げ中は糸に引かれて獲物の方へ向く
       const base = rodBaseOf(e);
-      const tensionFrac = Math.max(0.15, state.gauge / 100);
+      const fishEnergy = Math.max(0.15, state.gauge / 100);
       const toLureAngle = Math.atan2(e.lureX - base.x, -(e.lureY - base.y));
       const rodTargetAngle =
         state.phase === 'reeling'
           ? Math.max(-0.6, Math.min(0.6, toLureAngle))
           : Math.sin(t * 0.4) * 0.1 + Math.sin(t * 0.17 + 2) * 0.06;
       [e.rodAngle, e.rodAngleVel] = springTo(e.rodAngle, rodTargetAngle, e.rodAngleVel, 30, 5, dt);
-      const rodBendTarget = state.phase === 'reeling' ? 6 + tensionFrac * 14 : 0;
+      // 竿のしなりは糸の張力に比例させる（張るほど深く曲がる）
+      const rodBendTarget = state.phase === 'reeling' ? 3 + e.lineTension * 9 : 0;
       [e.rodBend, e.rodBendVel] = springTo(e.rodBend, rodBendTarget, e.rodBendVel, 120, 12, dt);
       const rodTip = rodTipOf(e);
 
@@ -355,28 +386,46 @@ export function FishingScene() {
         lureDamping = 8;
       } else if (state.phase === 'reeling') {
         // 常時の低周波なゆらぎ（体力が高い＝魚が元気なほど大きく暴れる）
-        const driftX = organicResistance(t, 10) * (0.4 + tensionFrac * 0.4);
-        const driftY = organicResistance(t * 0.87 + 4.2, 10) * (0.4 + tensionFrac * 0.4);
-        targetLureX = catchX + driftX;
-        targetLureY = catchY + driftY;
+        const driftX = organicResistance(t, 10) * (0.4 + fishEnergy * 0.4);
+        const driftY = organicResistance(t * 0.87 + 4.2, 10) * (0.4 + fishEnergy * 0.4);
+        // 獲物は糸を振りほどこうと、糸に対して左右へゆっくり首を振り続ける
+        const outwardNow = unitVector(e.lureX - base.x, e.lureY - base.y);
+        const sway = Math.sin(t * 1.9) * 40 * (0.4 + fishEnergy * 0.6);
+        targetLureX = catchX + driftX - outwardNow.y * sway;
+        targetLureY = catchY + driftY + outwardNow.x * sway;
         // 巻き上げ中はバネを柔らかく(damping低め)して、力積による揺り戻しが起きやすいようにする
         lureStiffness = 55;
         lureDamping = 6;
 
         // 一定間隔で「グッ」と引かれる力積を速度に直接加える（引っ張られている実感）
-        // 無重力なので上下左右どの向きにも同じ強さで暴れ、反作用で釣り人の体も引き寄せられる
+        // 獲物は糸に対して左右へ交互に走り（ときどき同じ側へ続けて走る）、少し沖へも逃げようとする。
+        // 横へ走ると張った糸が横に引きずられ、中ほどが遅れてしなって左右に揺り戻す
         e.pullTimer -= dt;
         if (e.pullTimer <= 0) {
-          const angle = Math.random() * Math.PI * 2;
-          const strength = (70 + Math.random() * 70) * (0.5 + tensionFrac * 0.5);
-          e.lureVX += Math.cos(angle) * strength;
-          e.lureVY += Math.sin(angle) * strength;
+          const outward = unitVector(e.lureX - base.x, e.lureY - base.y);
+          if (Math.random() < 0.75) e.pullSide = -e.pullSide;
+          const side = e.pullSide;
+          const jitter = (Math.random() - 0.5) * 0.5;
+          const pull = unitVector(
+            -outward.y * side + outward.x * (0.45 + jitter),
+            outward.x * side + outward.y * (0.45 + jitter),
+          );
+          const strength = (80 + Math.random() * 70) * (0.5 + fishEnergy * 0.5);
+          e.lureVX += pull.x * strength;
+          e.lureVY += pull.y * strength;
           e.lureSpinVel += (Math.random() - 0.5) * 6;
-          const dir = unitVector(e.lureX - base.x, e.lureY - base.y);
-          e.floatVX += dir.x * strength * 0.3;
-          e.floatVY += dir.y * strength * 0.3;
-          e.rodAngleVel += (Math.random() - 0.5) * 1.5;
-          e.shake.add(0.04 + tensionFrac * 0.06);
+          const along = Math.max(0, pull.x * outward.x + pull.y * outward.y);
+          const lateral = Math.abs(pull.x * -outward.y + pull.y * outward.x);
+          // 横へ走っても張った糸は引っ張られるので、横方向の成分も張力に効かせる
+          const tug = (along + lateral * 0.6) * (strength / 140);
+          e.floatVX += outward.x * strength * 0.3 * along;
+          e.floatVY += outward.y * strength * 0.3 * along;
+          // 竿も獲物が走った側へ振られる（竿の角度は右へ倒れるほど正）
+          e.rodAngleVel += -outward.y * side * (0.8 + Math.random() * 0.8);
+          e.rodBendVel += 50 * tug;
+          e.lineVib = Math.max(e.lineVib, 2 + 6 * tug);
+          if (tug > 0.15) playLineTug(tug);
+          e.shake.add(0.03 + tug * 0.08);
           e.pullTimer = 0.35 + Math.random() * 0.55;
         }
       } else if (state.phase === 'cast' || state.phase === 'waiting_bite') {
@@ -395,6 +444,33 @@ export function FishingScene() {
       e.lureSpinVel *= Math.exp(-SPIN_FRICTION * dt);
       e.lureSpin += e.lureSpinVel * dt;
 
+      // ---- 糸の張力 ----
+      // 獲物が釣り人から離れる速さ・魚の元気さ・巻き上げ（長押し）の3つで糸が張る
+      let tensionTarget = 0;
+      if (state.phase === 'reeling') {
+        const toLure = unitVector(e.lureX - rodTip.x, e.lureY - rodTip.y);
+        const outwardSpeed = e.lureVX * toLure.x + e.lureVY * toLure.y;
+        const reelingIn = state.reelPhaseMode === 'hold' && state.isHolding ? 0.35 : 0;
+        tensionTarget = Math.min(
+          1.3,
+          Math.max(0, 0.2 + fishEnergy * 0.4 + Math.max(-0.3, Math.min(0.7, outwardSpeed / 180)) + reelingIn),
+        );
+      }
+      const tensionRate = tensionTarget > e.lineTension ? TENSION_RISE_RATE : TENSION_FALL_RATE;
+      e.lineTension += (tensionTarget - e.lineTension) * (1 - Math.exp(-tensionRate * dt));
+      e.lineVib *= Math.exp(-LINE_VIB_DECAY * dt);
+
+      // ---- 糸の横ぶれ ----
+      // 糸の中ほどは獲物の横移動に遅れてついていくので、横の速さと逆向きにふくらむ。
+      // 弱い減衰のバネなので、獲物が止まった後も左右に数回揺り戻す
+      let bowTarget = 0;
+      if (state.phase === 'reeling') {
+        const toLure = unitVector(e.lureX - rodTip.x, e.lureY - rodTip.y);
+        const lateralSpeed = e.lureVX * -toLure.y + e.lureVY * toLure.x;
+        bowTarget = Math.max(-LINE_BOW_MAX, Math.min(LINE_BOW_MAX, -lateralSpeed * LINE_BOW_LAG));
+      }
+      [e.lineBow, e.lineBowVel] = springTo(e.lineBow, bowTarget, e.lineBowVel, LINE_BOW_STIFFNESS, LINE_BOW_DAMPING, dt);
+
       // 糸のたるみ：重力で垂れる代わりに、張りが弱いほど大きくうねる
       const slackTarget =
         state.phase === 'cast'
@@ -402,19 +478,22 @@ export function FishingScene() {
           : state.phase === 'waiting_bite'
             ? 38
             : state.phase === 'reeling'
-              ? (1 - tensionFrac) * 26
+              ? Math.max(0, 1 - e.lineTension) * 30
               : state.phase === 'idle'
                 ? 0
                 : 20;
-      e.slack += (slackTarget - e.slack) * (1 - Math.exp(-2 * dt));
+      // 張ったときは即座に一直線になり、緩むときはふわりとたるむ
+      const slackRate = slackTarget < e.slack && state.phase === 'reeling' ? 12 : 2;
+      e.slack += (slackTarget - e.slack) * (1 - Math.exp(-slackRate * dt));
 
       if (state.phase === 'idle') {
         e.camera.targetX = anchorX + Math.sin(t * 0.05) * 10;
         e.camera.targetY = anchorY + Math.sin(t * 0.037) * 6;
       } else if (state.phase === 'reeling') {
-        // 暴れるルアー（魚）の位置をカメラが追いかけることで、引かれている実感を強める
-        e.camera.targetX = e.lureX;
-        e.camera.targetY = e.lureY - 20;
+        // 暴れるルアー（魚）の位置をカメラが追いかけることで、引かれている実感を強める。
+        // ただし追いかけるのは投入点からのずれの半分だけにして、獲物が左右に走り糸が振られる様子が画面に残るようにする
+        e.camera.targetX = catchX + (e.lureX - catchX) * 0.45;
+        e.camera.targetY = catchY + (e.lureY - catchY) * 0.45 - 20;
       }
       e.camera.update(dt);
       const shakeOffset = e.shake.update(dt, t);
@@ -476,7 +555,9 @@ export function FishingScene() {
 
       const lure = { x: e.lureX, y: e.lureY };
       if (state.phase !== 'idle') {
-        drawFishingLine(ctx, rodTip, lure, e.slack, t);
+        // 張り詰めている間は糸が細かく唸り続ける
+        const hum = Math.max(0, e.lineTension - 0.85) * 5;
+        drawFishingLine(ctx, rodTip, lure, e.slack, t, e.lineTension, e.lineVib + hum, e.lineBow);
       }
 
       // ルアー/獲物（自転しているのが見えるよう十字の印を重ねる）
@@ -590,6 +671,9 @@ export function FishingScene() {
       e.floatVY += dir.y * 14;
       e.lureVX -= dir.x * 18;
       e.lureVY -= dir.y * 18;
+      // ひと巻きごとに糸が一瞬ピンと張る
+      e.lineTension = Math.min(1.3, e.lineTension + 0.15);
+      e.lineVib = Math.max(e.lineVib, 2.5);
       e.crank.onTap();
       if (state.reelPhaseMode === 'tap') playReelClick();
     }
