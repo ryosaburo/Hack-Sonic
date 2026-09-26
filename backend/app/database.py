@@ -4,7 +4,7 @@ from datetime import date
 from pathlib import Path
 
 from sqlalchemy import inspect, text
-from sqlmodel import SQLModel, Session, create_engine, select
+from sqlmodel import SQLModel, Session, create_engine
 from dotenv import load_dotenv
 
 from .models import CatalogEntry
@@ -36,28 +36,21 @@ def _add_missing_columns():
             conn.execute(text("ALTER TABLE catalog ADD COLUMN seasons JSON"))
 
 
-def seed_catalog_if_empty():
+# catalog.json を正として図鑑テーブルを揃える。初回は全件投入し、既存DBでも
+# 画像・クレジット・季節などの変更や、後から追加した天体が起動時に反映されるようにする。
+# シードから消えた天体は、捕獲記録から参照されている可能性があるので削除しない。
+def sync_catalog_from_seed():
     raw = json.loads(CATALOG_SEED_PATH.read_text(encoding="utf-8"))
     with Session(engine) as session:
-        existing = session.exec(select(CatalogEntry)).first()
-        if existing:
-            _sync_seasons(session, raw)
-            return
         for item in raw:
-            item["capture_date"] = date.fromisoformat(item["capture_date"])
-            session.add(CatalogEntry(**item))
-        session.commit()
-
-
-# 既存DBにもシードの季節設定を反映する（季節限定の天体を後から指定できるように）
-def _sync_seasons(session: Session, raw: list[dict]):
-    changed = False
-    for item in raw:
-        entry = session.get(CatalogEntry, item["id"])
-        seasons = item.get("seasons")
-        if entry and entry.seasons != seasons:
-            entry.seasons = seasons
-            session.add(entry)
-            changed = True
-    if changed:
+            fields = {**item, "capture_date": date.fromisoformat(item["capture_date"])}
+            fields.setdefault("seasons", None)
+            fields.setdefault("license_note", None)
+            entry = session.get(CatalogEntry, item["id"])
+            if entry is None:
+                session.add(CatalogEntry(**fields))
+                continue
+            for key, value in fields.items():
+                if getattr(entry, key) != value:
+                    setattr(entry, key, value)
         session.commit()
