@@ -74,7 +74,12 @@
 .step-3 .gyotaku-image {
   filter: none;
   clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-  animation: diagonal-wipe 0.9s ease forwards;
+  animation: diagonal-wipe var(--wipe-duration, 0.9s) ease-in-out forwards;
+}
+
+/* スキップしたときは、レア度によらずすぐに見せる */
+.skipped .gyotaku-image {
+  animation-duration: 0.3s;
 }
 
 @keyframes diagonal-wipe {

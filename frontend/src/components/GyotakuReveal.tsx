@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import type { CatalogEntry } from '../types';
 import { RARITY_LABEL, RARITY_SYMBOL } from '../types';
 import './GyotakuReveal.css';
@@ -8,6 +8,14 @@ const TOTAL_DURATION_MS: Record<string, number> = {
   rare: 1800,
   super_rare: 2500,
   legendary: 3500,
+};
+
+// 実写が横から現れる速さ。レアなものほどゆっくり見せる
+const WIPE_DURATION_MS: Record<string, number> = {
+  common: 900,
+  rare: 1500,
+  super_rare: 2200,
+  legendary: 3200,
 };
 
 const PARTICLE_COUNT = 12;
@@ -25,19 +33,21 @@ export function GyotakuReveal({ entry, doneLabel, onDone, registeredNote }: Gyot
 
   const rarity = entry.rarity;
   const total = TOTAL_DURATION_MS[rarity];
+  const wipe = WIPE_DURATION_MS[rarity];
 
   // 呼び出し側がentry.idをkeyに渡して天体ごとに再マウントする前提なので、
   // ここでは初回タイマーのセットだけを行う(stateのリセットはしない)。
   useEffect(() => {
     const t1 = window.setTimeout(() => setStep(1), total * 0.25);
     const t2 = window.setTimeout(() => setStep(2), total * 0.5);
-    const t3 = window.setTimeout(() => setStep(3), total * 0.85);
+    // 情報は実写が現れきってから出す
+    const t3 = window.setTimeout(() => setStep(3), total * 0.5 + wipe);
     return () => {
       window.clearTimeout(t1);
       window.clearTimeout(t2);
       window.clearTimeout(t3);
     };
-  }, [total]);
+  }, [total, wipe]);
 
   const particles = useMemo(
     () =>
@@ -56,7 +66,10 @@ export function GyotakuReveal({ entry, doneLabel, onDone, registeredNote }: Gyot
 
   return (
     <div className="overlay-backdrop gyotaku-backdrop" onClick={step < 3 ? handleSkip : undefined}>
-      <div className={`gyotaku-card rarity-${rarity} step-${step} ${skipped ? 'skipped' : ''}`}>
+      <div
+        className={`gyotaku-card rarity-${rarity} step-${step} ${skipped ? 'skipped' : ''}`}
+        style={{ '--wipe-duration': `${wipe}ms` } as CSSProperties}
+      >
         {rarity !== 'common' &&
           particles.map((p, i) => (
             <span
