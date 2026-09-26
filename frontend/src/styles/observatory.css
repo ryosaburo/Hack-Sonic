@@ -1,4 +1,5 @@
-/* 星図・天文台の観測台帳風UIの共通トークン（図鑑・交換所で共有する） */
+/* 星図・天文台の観測台帳風UIの共通トークン（釣り画面・図鑑・交換所で共有する） */
+.app-root,
 .zukan-screen,
 .exchange-shop {
   --zk-bg: #0b0f1a;
@@ -11,6 +12,8 @@
   --zk-brass: #b8955a;
   /* エラー表示だけに使う（アクセントではない） */
   --zk-alert: #c77b66;
+  /* 星空の上に重ねるパネルの地（ぼかしは使わず、墨色を少し透かすだけ） */
+  --zk-panel: rgb(11 15 26 / 0.8);
 
   --zk-font-serif: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
   --zk-font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;

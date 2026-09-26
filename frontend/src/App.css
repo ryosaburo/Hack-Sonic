@@ -8,18 +8,31 @@
   background: #05060f;
 }
 
+/* 図鑑を開くボタン。釣り画面のHUDと同じ観測台帳風 */
 .zukan-fab {
   position: absolute;
   top: 16px;
   right: 16px;
   z-index: 6;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: #eaf2ff;
-  border-radius: 999px;
   width: var(--zukan-fab-width);
   padding: 0.5rem 0;
+  border: 1px solid var(--zk-rule-strong);
+  border-radius: var(--zk-radius);
+  background: var(--zk-panel);
+  color: var(--zk-ink);
+  font-family: var(--zk-font-serif);
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.2em;
   cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.zukan-fab:hover {
+  border-color: var(--zk-brass);
+  color: var(--zk-brass);
+}
+
+.zukan-fab:focus-visible {
+  outline: 2px solid var(--zk-brass);
+  outline-offset: 2px;
 }
