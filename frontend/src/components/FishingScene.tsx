@@ -807,26 +807,28 @@ export function FishingScene() {
               </div>
             </div>
 
+            {/* 季節の切り替えは画面上部、図鑑ボタンの左に置く */}
+            <div className="season-picker" role="radiogroup" aria-label="季節">
+              {SEASON_ORDER.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  role="radio"
+                  aria-checked={s === season}
+                  className={`season-option season-option-${s} ${s === season ? 'active' : ''}`}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    if (s === season) return;
+                    setSeason(s);
+                    setSeasonChanged(true);
+                  }}
+                >
+                  {SEASON_LABEL[s]}
+                </button>
+              ))}
+            </div>
+
             <div className="idle-bottom">
-              <div className="season-picker" role="radiogroup" aria-label="季節">
-                {SEASON_ORDER.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    role="radio"
-                    aria-checked={s === season}
-                    className={`season-option season-option-${s} ${s === season ? 'active' : ''}`}
-                    onClick={(ev) => {
-                      ev.stopPropagation();
-                      if (s === season) return;
-                      setSeason(s);
-                      setSeasonChanged(true);
-                    }}
-                  >
-                    {SEASON_LABEL[s]}
-                  </button>
-                ))}
-              </div>
               <p className="explore-hint">ドラッグ・スクロール・矢印キーで天の川を移動</p>
               <button
                 type="button"

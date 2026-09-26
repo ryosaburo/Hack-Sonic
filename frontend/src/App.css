@@ -1,4 +1,6 @@
 .app-root {
+  /* 図鑑ボタンの幅。季節の切り替えをその左に並べるのに使う */
+  --zukan-fab-width: 4.6rem;
   position: relative;
   width: 100vw;
   height: 100dvh;
@@ -15,7 +17,8 @@
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: #eaf2ff;
   border-radius: 999px;
-  padding: 0.5rem 1.1rem;
+  width: var(--zukan-fab-width);
+  padding: 0.5rem 0;
   font-weight: 700;
   letter-spacing: 0.05em;
   cursor: pointer;
