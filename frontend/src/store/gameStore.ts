@@ -116,7 +116,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     if (state.usingBackend) {
       try {
-        const res = await api.castStart();
+        const res = await api.castStart(state.season);
         rarity = res.rarity;
         attemptId = res.attempt_id;
         timeLimit = res.time_limit;
