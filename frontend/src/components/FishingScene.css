@@ -28,7 +28,7 @@
 
 .explore-hud {
   position: absolute;
-  top: 144px;
+  top: 190px;
   left: 16px;
   display: flex;
   flex-direction: column;
