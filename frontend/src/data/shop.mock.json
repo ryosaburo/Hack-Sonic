@@ -1,6 +1,6 @@
 {
   "products": [
-    {"id": "lure", "name": "誘引ルアー", "kind": "consumable", "price": 100, "description": "次の1投で高レアリティの出現率アップ。失敗しても1個消費します。", "rarity_multipliers": [1, 1.5, 2, 3]},
+    {"id": "lure", "name": "誘引ルアー", "kind": "consumable", "price": 250, "description": "次の1投は必ずスーパーレア以上が掛かる。失敗しても1個消費します。", "min_rarity": "super_rare", "rarity_multipliers": [1, 1.5, 2, 3]},
     {"id": "time_extension", "name": "星時計", "kind": "permanent", "price": 120, "description": "永久装備。装備すると制限時間を5秒延長します。", "extra_seconds": 5},
     {"id": "power_reel", "name": "強化リール", "kind": "permanent", "price": 100, "description": "永久装備。装備すると連打・長押しのダメージが1.25倍になります。", "damage_multiplier": 1.25},
     {"id": "silver_current", "name": "銀の流れの釣り場情報", "kind": "information", "price": 150, "description": "高レアリティが集まる範囲を開示。全季節で利用でき、情報はずっと残ります。"}
