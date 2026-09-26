@@ -184,6 +184,22 @@ def test_information_disclosure_and_boundaries(game):
     assert rarity_multipliers(699, 0, False) == [1, 1, 1, 1]
 
 
+def test_silver_current_reveals_one_more_spot_per_exchange_up_to_five(game):
+    client, headers, user_id, _ = game
+    fund(user_id, 150 * 6)
+    spot_ids = []
+    for i in range(5):
+        body = {'request_id': str(uuid4()), 'product_id': 'silver_current'}
+        result = client.post('/api/economy/exchange', headers=headers, json=body).json()
+        assert result['inventory']['silver_current'] == i + 1
+        spot_ids = [s['id'] for s in result['spots']]
+        assert len(spot_ids) == i + 1
+    assert spot_ids == [s['id'] for s in SHOP['spots'] if s['product'] == 'silver_current']
+    sixth = client.post('/api/economy/exchange', headers=headers, json={'request_id': str(uuid4()), 'product_id': 'silver_current'})
+    assert sixth.status_code == 409
+    assert client.get('/api/economy', headers=headers).json()['balance'] == 150
+
+
 def test_draw_weights_and_mock_config_match(monkeypatch):
     observed = {}
     def choices(values, weights, k):
