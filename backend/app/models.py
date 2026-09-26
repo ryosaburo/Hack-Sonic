@@ -1,7 +1,10 @@
 from datetime import datetime, date, timezone
-from typing import Optional
+from typing import Literal, Optional
 
+from sqlalchemy import JSON, Column
 from sqlmodel import SQLModel, Field
+
+Season = Literal["spring", "summer", "autumn", "winter"]
 
 
 class CatalogEntry(SQLModel, table=True):
@@ -17,6 +20,8 @@ class CatalogEntry(SQLModel, table=True):
     capture_date: date
     flavor_text: str
     license_note: Optional[str] = None
+    # 釣れる季節。NULLなら四季を通して釣れる
+    seasons: Optional[list[str]] = Field(default=None, sa_column=Column(JSON))
 
 
 class User(SQLModel, table=True):
@@ -49,12 +54,18 @@ class CatalogEntryPublic(SQLModel):
     weight: int
     capture_date: date
     flavor_text: str
+    seasons: Optional[list[str]] = None
 
 
 class CollectionPublic(SQLModel):
     species_id: str
     first_caught_at: datetime
     catch_count: int
+
+
+class CastStartRequest(SQLModel):
+    # 省略時は季節で絞り込まない
+    season: Optional[Season] = None
 
 
 class CastStartResponse(SQLModel):

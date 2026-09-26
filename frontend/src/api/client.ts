@@ -1,4 +1,5 @@
 import type { CatalogEntry, CollectionRecord, Rarity } from '../types';
+import type { Season } from '../engine/seasons';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000';
 const DEVICE_ID_KEY = 'space-fishing:device-id';
@@ -53,8 +54,12 @@ export function fetchCollection(): Promise<CollectionRecord[]> {
   return request<CollectionRecord[]>('/api/collection');
 }
 
-export function castStart(): Promise<CastStartResponse> {
-  return request<CastStartResponse>('/api/cast/start', { method: 'POST' });
+// 季節を渡すと、その季節に釣れる天体の中から抽選される
+export function castStart(season: Season): Promise<CastStartResponse> {
+  return request<CastStartResponse>('/api/cast/start', {
+    method: 'POST',
+    body: JSON.stringify({ season }),
+  });
 }
 
 export function castResolve(body: CastResolveRequest): Promise<CastResolveResponse> {
