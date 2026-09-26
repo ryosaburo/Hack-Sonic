@@ -3,7 +3,8 @@ import type { CatalogEntry, CatchBonus, Rarity } from '../types';
 import type { Season } from './seasons';
 
 export interface Spot {
-  id: string; name: string;
+  // product: この釣り場を開示する商品のID
+  id: string; product: string; name: string;
   x_min: number; x_max: number; y_min: number; y_max: number;
   rarity_multipliers: number[];
 }
@@ -12,6 +13,10 @@ export interface Product {
   rarity_multipliers?: number[]; extra_seconds?: number; damage_multiplier?: number;
   // 誘引ルアー：使った1投はこのレア度以上だけが掛かる
   min_rarity?: string;
+  // 消耗品以外で、同じ商品を交換できる上限（既定1）
+  max_count?: number;
+  // 交換所に出す商品のイラスト（frontend/public/shop-images）
+  image_url?: string;
 }
 export interface Economy {
   balance: number;
@@ -24,8 +29,19 @@ export const MOCK_PRODUCTS: Product[] = shop.products;
 export const EMPTY_ECONOMY: Economy = { balance: 0, inventory: {}, equipped: {}, spots: [] };
 export const RARITY_WEIGHTS: Record<Rarity, number> = { common: 70, rare: 20, super_rare: 8, legendary: 2 };
 export const inSpot = (spot: Spot, x: number, y: number) => x >= spot.x_min && x <= spot.x_max && y >= spot.y_min && y <= spot.y_max;
+// 同じ商品を持てる上限。消耗品は上限なし（backend の purchase_limit と同じ）
+export const purchaseLimit = (product: Product) => (product.kind === 'consumable' ? Infinity : product.max_count ?? 1);
+// 釣り場情報は1回の交換で1か所ずつ、shop.json に並べた順に開示する（backend の owned_spots と同じ）
+function ownedSpots(inventory: Record<string, number>): Spot[] {
+  const counts = new Map<string, number>();
+  return shop.spots.filter(s => {
+    const n = (counts.get(s.product) ?? 0) + 1;
+    counts.set(s.product, n);
+    return n <= (inventory[s.product] ?? 0);
+  });
+}
 export function mockEconomy(balance: number, inventory: Record<string, number>, equipped: Record<string, boolean>): Economy {
-  return { balance, inventory, equipped, spots: shop.spots.filter(s => inventory[s.id] > 0) };
+  return { balance, inventory, equipped, spots: ownedSpots(inventory) };
 }
 // 天体ごとの「釣れやすい場所」の開示価格（レア度別）。交換所の商品一覧には出さない
 export type CatchArea = NonNullable<CatchBonus['area']>;

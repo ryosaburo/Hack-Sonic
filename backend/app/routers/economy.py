@@ -5,7 +5,7 @@ from ..database import get_session
 from ..deps import get_current_user
 from ..economy import (
     AREA_INFO_PRICES, PRODUCTS, area_info_key, configured_test_points, economy_transaction,
-    revealed_areas, wallet_for, wallet_public,
+    purchase_limit, revealed_areas, wallet_for, wallet_public,
 )
 from ..models import AreaRevealRequest, CatalogEntry, EquipmentRequest, Exchange, ExchangeRequest, User, Wallet
 
@@ -47,7 +47,8 @@ def exchange(body: ExchangeRequest, session: Session = Depends(get_session), use
             product = PRODUCTS.get(body.product_id)
             if not product:
                 raise HTTPException(404, "unknown product")
-            if product["kind"] != "consumable" and wallet.inventory.get(body.product_id, 0):
+            limit = purchase_limit(product)
+            if limit is not None and wallet.inventory.get(body.product_id, 0) >= limit:
                 raise HTTPException(409, "already owned")
             if wallet.balance < product["price"]:
                 raise HTTPException(409, "insufficient points")

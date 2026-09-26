@@ -4,7 +4,7 @@ import { RARITY_CONFIG } from '../types';
 import * as api from '../api/client';
 import catalogMock from '../data/catalog.mock.json';
 import { seasonOf, type Season } from '../engine/seasons';
-import { AREA_INFO_PRICES, areaInfoKey, drawMock, EMPTY_ECONOMY, MOCK_PRODUCTS, mockAreas, mockEconomy, type CatchArea, type Economy, type Product } from '../engine/economy';
+import { AREA_INFO_PRICES, areaInfoKey, drawMock, EMPTY_ECONOMY, MOCK_PRODUCTS, mockAreas, mockEconomy, purchaseLimit, type CatchArea, type Economy, type Product } from '../engine/economy';
 
 const MOCK_KEY = 'space-fishing:mock-progress:v1';
 const PENDING_KEY = 'space-fishing:pending:v1';
@@ -212,7 +212,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       return;
     }
     const product = s.products.find(p => p.id === id);
-    if (!product || s.economy.balance < product.price || (product.kind !== 'consumable' && s.economy.inventory[id])) return;
+    if (!product || s.economy.balance < product.price || (s.economy.inventory[id] ?? 0) >= purchaseLimit(product)) return;
     set({ economy: mockEconomy(s.economy.balance - product.price, { ...s.economy.inventory, [id]: (s.economy.inventory[id] ?? 0) + 1 }, s.economy.equipped) });
   },
   setEquipment: async (id, equipped) => {
