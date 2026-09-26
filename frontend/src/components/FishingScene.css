@@ -96,11 +96,11 @@
   color: #3a2c0a;
   border: none;
   border-radius: 999px;
-  padding: 0.9rem 2.2rem;
-  font-size: 1.05rem;
+  padding: 0.7rem 1.7rem;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(242, 193, 78, 0.35);
+  box-shadow: 0 6px 18px rgba(242, 193, 78, 0.3);
 }
 .cast-button:active {
   transform: translateY(1px) scale(0.98);
@@ -211,6 +211,10 @@
 }
 
 .season-picker {
+  position: absolute;
+  top: 16px;
+  right: calc(16px + var(--zukan-fab-width) + 8px);
+  z-index: 6;
   pointer-events: auto;
   display: flex;
   gap: 0.35rem;
@@ -222,9 +226,9 @@
 }
 
 .season-option {
-  min-width: 2.6rem;
-  min-height: 2.2rem;
-  padding: 0.3rem 0.7rem;
+  min-width: 2.4rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.6rem;
   border: none;
   border-radius: 999px;
   background: transparent;
@@ -309,5 +313,19 @@
   @keyframes season-banner-fade {
     0%, 100% { opacity: 0; }
     15%, 70% { opacity: 1; }
+  }
+}
+
+/* 狭い画面では左上の交換所と重ならないよう、図鑑ボタンの下の段に回す */
+@media (max-width: 600px) {
+  .season-picker {
+    top: calc(16px + 2.6rem + 8px);
+    right: 16px;
+    gap: 0.2rem;
+  }
+
+  .season-option {
+    min-width: 2rem;
+    padding: 0.25rem 0.45rem;
   }
 }

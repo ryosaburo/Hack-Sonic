@@ -15,6 +15,7 @@ import {
   organicResistance,
   springTo,
 } from '../engine/physics';
+import { drawRod, REEL_TURN_PER_CRANK, type RodDrawParams } from '../engine/rod';
 import {
   initAudio,
   playReelClick,
@@ -40,8 +41,11 @@ import './FishingScene.css';
 
 // 竿の根元・ルアー投入点はプレイヤー位置(pan)からの相対座標
 const CATCH_POINT = { x: 0, y: -140 };
-const ROD_BASE_Y = 320;
-const ROD_LENGTH = 60;
+// 竿の根元（画面中央からの下方向のずれ）。下端の案内文・キャストボタンと重ならない高さにする
+const ROD_BASE_Y = 170;
+// 竿の描画上の大きさの倍率。長さも太さも部品もこれに比例させる
+const ROD_SCALE = 2;
+const ROD_LENGTH = 60 * ROD_SCALE;
 
 // 無重力の挙動パラメータ。どれも「弱いバネ＋弱い減衰」で、動き出すと止まりにくい。
 const CAST_STIFFNESS = 4;
@@ -145,6 +149,20 @@ export function FishingScene() {
     rodAngleVel: 0,
     rodBend: 0,
     rodBendVel: 0,
+    // 竿の描画に渡す値。毎フレーム作り直さずに中身だけ書き換える
+    rodDraw: {
+      base: { x: 0, y: 0 },
+      tip: { x: 0, y: 0 },
+      angle: 0,
+      bend: 0,
+      bendSign: 1,
+      tension: 0,
+      reelAngle: 0,
+      telegraph: false,
+      reducedMotion: false,
+      t: 0,
+      scale: ROD_SCALE,
+    } as RodDrawParams,
     lureX: 0,
     lureY: START_PAN_Y + ROD_BASE_Y - ROD_LENGTH,
     lureVX: 0,
@@ -231,6 +249,7 @@ export function FishingScene() {
     let raf = 0;
     let last = performance.now();
     let lastHudText = '';
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     function loop(now: number) {
       const dt = Math.min((now - last) / 1000, 0.05);
@@ -589,21 +608,19 @@ export function FishingScene() {
       }
 
       // 竿（しなりは糸の引かれる側へ曲げる）
-      const perpX = Math.cos(e.rodAngle);
-      const perpY = Math.sin(e.rodAngle);
-      const bendSign = Math.sign(e.lureX - base.x) || 1;
-      ctx.beginPath();
-      ctx.strokeStyle = '#c8b48a';
-      ctx.lineWidth = 4;
-      ctx.lineCap = 'round';
-      ctx.moveTo(base.x, base.y);
-      ctx.quadraticCurveTo(
-        (base.x + rodTip.x) / 2 + perpX * e.rodBend * bendSign,
-        (base.y + rodTip.y) / 2 + perpY * e.rodBend * bendSign,
-        rodTip.x,
-        rodTip.y,
-      );
-      ctx.stroke();
+      const rod = e.rodDraw;
+      rod.base = base;
+      rod.tip = rodTip;
+      rod.angle = e.rodAngle;
+      // しなりの物理量は変えず、竿の大きさに合わせて見た目だけ深くする
+      rod.bend = e.rodBend * ROD_SCALE;
+      rod.bendSign = Math.sign(e.lureX - base.x) || 1;
+      rod.tension = e.lineTension;
+      rod.reelAngle = e.crank.angle * REEL_TURN_PER_CRANK;
+      rod.telegraph = state.phase === 'reeling' && state.phaseTelegraph;
+      rod.reducedMotion = motion.matches;
+      rod.t = t;
+      drawRod(ctx, rod);
 
       e.camera.restore(ctx);
 
@@ -780,26 +797,28 @@ export function FishingScene() {
               </div>
             </div>
 
+            {/* 季節の切り替えは画面上部、図鑑ボタンの左に置く */}
+            <div className="season-picker" role="radiogroup" aria-label="季節">
+              {SEASON_ORDER.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  role="radio"
+                  aria-checked={s === season}
+                  className={`season-option season-option-${s} ${s === season ? 'active' : ''}`}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    if (s === season) return;
+                    setSeason(s);
+                    setSeasonChanged(true);
+                  }}
+                >
+                  {SEASON_LABEL[s]}
+                </button>
+              ))}
+            </div>
+
             <div className="idle-bottom">
-              <div className="season-picker" role="radiogroup" aria-label="季節">
-                {SEASON_ORDER.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    role="radio"
-                    aria-checked={s === season}
-                    className={`season-option season-option-${s} ${s === season ? 'active' : ''}`}
-                    onClick={(ev) => {
-                      ev.stopPropagation();
-                      if (s === season) return;
-                      setSeason(s);
-                      setSeasonChanged(true);
-                    }}
-                  >
-                    {SEASON_LABEL[s]}
-                  </button>
-                ))}
-              </div>
               <p className="explore-hint">ドラッグ・スクロール・矢印キーで天の川を移動</p>
               <button
                 type="button"
