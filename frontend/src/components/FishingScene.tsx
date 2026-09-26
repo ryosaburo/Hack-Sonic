@@ -34,6 +34,7 @@ import {
   cloneLook,
   rgba,
 } from '../engine/seasons';
+import { drawSpotOverlay } from '../engine/spotOverlay';
 import { RARITY_CONFIG } from '../types';
 import './FishingScene.css';
 
@@ -533,6 +534,14 @@ export function FishingScene() {
       drawMilkyWay(ctx, e.camera, cw, ch, t, look);
       updateAndDrawDust(ctx, e.dust, e.camera, dt, look);
 
+      // 購入した釣り場情報はワールド座標の範囲として表示する（投入点の照準より下に描く）
+      if (state.phase === 'idle') {
+        for (const spot of state.economy.spots) {
+          const inside = catchX >= spot.x_min && catchX <= spot.x_max && catchY >= spot.y_min && catchY <= spot.y_max;
+          drawSpotOverlay(ctx, spot, inside, t, dt, e.camera.zoom);
+        }
+      }
+
       // 待機中は「ここに投げる」投入点を示す
       if (state.phase === 'idle') {
         const pulse = 0.5 + 0.5 * Math.sin(t * 2.4);
@@ -577,25 +586,6 @@ export function FishingScene() {
         ctx.moveTo(lure.x + sn, lure.y - c);
         ctx.lineTo(lure.x - sn, lure.y + c);
         ctx.stroke();
-      }
-
-      // 購入した釣り場情報はワールド座標の枠として表示する。
-      if (state.phase === 'idle') {
-        ctx.save();
-        for (const spot of state.economy.spots) {
-          const inside = catchX >= spot.x_min && catchX <= spot.x_max && catchY >= spot.y_min && catchY <= spot.y_max;
-          ctx.fillStyle = inside ? 'rgba(120,220,190,0.13)' : 'rgba(120,180,240,0.08)';
-          ctx.strokeStyle = inside ? '#9ff0ce' : '#8abde9';
-          ctx.lineWidth = 2;
-          ctx.setLineDash([12, 8]);
-          ctx.fillRect(spot.x_min, spot.y_min, spot.x_max - spot.x_min, spot.y_max - spot.y_min);
-          ctx.strokeRect(spot.x_min, spot.y_min, spot.x_max - spot.x_min, spot.y_max - spot.y_min);
-          ctx.setLineDash([]);
-          ctx.font = '16px sans-serif';
-          ctx.fillStyle = '#eaf2ff';
-          ctx.fillText(spot.name + (inside ? ' · 範囲内' : ''), spot.x_min + 12, spot.y_min + 26);
-        }
-        ctx.restore();
       }
 
       // 竿（しなりは糸の引かれる側へ曲げる）
