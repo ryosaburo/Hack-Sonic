@@ -435,5 +435,273 @@
       "area": { "x": -1060, "y": -34, "radius": 35 },
       "area_multiplier": 3
     }
+  },
+  {
+    "id": "bennu_osiris_rex",
+    "body_name": "ベンヌ",
+    "mission_name": "オシリス・レックス",
+    "image_url": "/catalog-images/bennu.jpg",
+    "credit_text": "NASA/Goddard/University of Arizona",
+    "rarity": "common",
+    "weight": 35,
+    "point": 10,
+    "capture_date": "2019-03-14",
+    "flavor_text": "リュウグウによく似たコマ型の炭素質小惑星。表面の砂を採取した瞬間、地面はボールプールのように柔らかく沈み込んだ。"
+  },
+  {
+    "id": "eros_near",
+    "body_name": "エロス",
+    "mission_name": "ニア・シューメーカー",
+    "image_url": "/catalog-images/eros.jpg",
+    "credit_text": "NASA/JPL/JHUAPL",
+    "rarity": "common",
+    "weight": 35,
+    "point": 10,
+    "capture_date": "2000-05-07",
+    "flavor_text": "細長いジャガイモのような形をした、地球に近づく小惑星。探査機が史上はじめてそのまわりを周回し、最後には表面へ降り立った。"
+  },
+  {
+    "id": "vesta_dawn",
+    "body_name": "ベスタ",
+    "mission_name": "ドーン",
+    "image_url": "/catalog-images/vesta.jpg",
+    "credit_text": "NASA/JPL-Caltech/UCLA/MPS/DLR/IDA",
+    "rarity": "common",
+    "weight": 35,
+    "point": 10,
+    "capture_date": "2011-07-24",
+    "flavor_text": "小惑星帯で2番目に重い天体。南極には巨大な衝突クレーターがあり、その中央には高さ2万メートルを超える山がそびえる。"
+  },
+  {
+    "id": "ceres_dawn",
+    "body_name": "セレス",
+    "mission_name": "ドーン",
+    "image_url": "/catalog-images/ceres.jpg",
+    "credit_text": "NASA/JPL-Caltech/UCLA/MPS/DLR/IDA",
+    "rarity": "common",
+    "weight": 35,
+    "point": 10,
+    "capture_date": "2015-06-25",
+    "flavor_text": "小惑星帯で最も大きな天体で、準惑星にも数えられる。クレーターの底では、塩類でできた明るい斑点が白く輝いている。"
+  },
+  {
+    "id": "ida_galileo",
+    "body_name": "イダ",
+    "mission_name": "ガリレオ",
+    "image_url": "/catalog-images/ida.jpg",
+    "credit_text": "NASA/JPL",
+    "rarity": "common",
+    "weight": 35,
+    "point": 10,
+    "capture_date": "1993-08-28",
+    "flavor_text": "小惑星のまわりを回る衛星が史上はじめて見つかった天体。長さ約60キロメートルの細長い体のそばに、小さな衛星ダクティルが浮かんでいる。"
+  },
+  {
+    "id": "europa_juno",
+    "body_name": "エウロパ",
+    "mission_name": "ジュノー",
+    "image_url": "/catalog-images/europa.jpg",
+    "credit_text": "NASA/JPL-Caltech/SwRI/MSSS",
+    "rarity": "rare",
+    "weight": 10,
+    "point": 30,
+    "capture_date": "2022-09-29",
+    "flavor_text": "氷の殻に覆われた木星の衛星。ひび割れた表面の下には、地球の海よりも多くの水をたたえた海が眠っていると考えられている。",
+    "catch_bonus": {
+      "seasons": ["winter"],
+      "season_multiplier": 2,
+      "area": { "x": 980, "y": -12, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "titan_cassini",
+    "body_name": "タイタン",
+    "mission_name": "カッシーニ",
+    "image_url": "/catalog-images/titan.jpg",
+    "credit_text": "NASA/JPL-Caltech/Space Science Institute",
+    "rarity": "rare",
+    "weight": 10,
+    "point": 30,
+    "capture_date": "2011-12-22",
+    "flavor_text": "土星で最も大きな衛星。分厚いオレンジ色の大気の下には、液体のメタンでできた湖や川が広がっている。",
+    "catch_bonus": {
+      "seasons": ["autumn"],
+      "season_multiplier": 2,
+      "area": { "x": 1060, "y": -4, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "pluto_new_horizons",
+    "body_name": "冥王星",
+    "mission_name": "ニュー・ホライズンズ",
+    "image_url": "/catalog-images/pluto.jpg",
+    "credit_text": "NASA/Johns Hopkins University Applied Physics Laboratory/Southwest Research Institute",
+    "rarity": "rare",
+    "weight": 10,
+    "point": 30,
+    "capture_date": "2015-07-25",
+    "flavor_text": "太陽系の果てを回る準惑星。探査機がはじめて近づくと、ハートの形をした広大な氷の平原が姿を現した。",
+    "catch_bonus": {
+      "seasons": ["summer"],
+      "season_multiplier": 2,
+      "area": { "x": 1140, "y": -99, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "halley_giotto",
+    "body_name": "ハレー彗星",
+    "mission_name": "ジオット",
+    "image_url": "/catalog-images/halley.jpg",
+    "credit_text": "NASA/ESA/Giotto Project",
+    "rarity": "rare",
+    "weight": 10,
+    "point": 30,
+    "capture_date": "1986-03-14",
+    "flavor_text": "約76年ごとに地球へ近づく周期彗星。探査機がはじめてその核に迫り、黒いちりに覆われた雪玉のような正体を明らかにした。",
+    "catch_bonus": {
+      "seasons": ["spring"],
+      "season_multiplier": 2,
+      "area": { "x": 1220, "y": 62, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "galaxy_m106",
+    "body_name": "M106",
+    "mission_name": "スピッツァー宇宙望遠鏡ほか(多波長合成)",
+    "image_url": "/catalog-images/galaxy_m106.jpg",
+    "credit_text": "NASA/JPL-Caltech; X-ray: CXC/Univ. of Maryland/A.S. Wilson et al.; Optical: Pal.Obs. DSS; IR: VLA: NRAO/AUI/NSF",
+    "rarity": "rare",
+    "weight": 10,
+    "point": 30,
+    "capture_date": "2007-12-18",
+    "flavor_text": "りょうけん座の方向にある渦巻き銀河。ふつうの渦巻き腕とは別に、中心のブラックホールの活動でできたとみられる「異常な腕」が伸びている。",
+    "seasons": ["spring"],
+    "catch_bonus": {
+      "area": { "x": -1140, "y": 63, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "galaxy_m51",
+    "body_name": "子持ち銀河",
+    "mission_name": "チャンドラ・ハッブルほか(多波長合成)",
+    "image_url": "/catalog-images/galaxy_m51.jpg",
+    "credit_text": "X-ray: NASA/CXC; UV: NASA/JPL-Caltech; Optical: NASA/ESA/STScI/AURA; IR: NASA/JPL-Caltech/Univ. of Ariz.",
+    "rarity": "rare",
+    "weight": 10,
+    "point": 30,
+    "capture_date": "2007-12-13",
+    "flavor_text": "渦巻き銀河のそばに小さな銀河が寄り添う姿から、日本ではこう呼ばれる。りょうけん座の方向、数千万光年のかなたにある。",
+    "seasons": ["spring"],
+    "catch_bonus": {
+      "area": { "x": -1220, "y": -18, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "nebula_trifid",
+    "body_name": "三裂星雲",
+    "mission_name": "WISE",
+    "image_url": "/catalog-images/nebula_trifid.jpg",
+    "credit_text": "NASA/JPL-Caltech/UCLA",
+    "rarity": "rare",
+    "weight": 10,
+    "point": 30,
+    "capture_date": "2014-01-29",
+    "flavor_text": "暗い筋で三つに裂けたように見える、いて座の星雲。赤外線で見ると、重い星が放つ光と風が、ちりの雲に大きな空洞を吹き開けているのがわかる。",
+    "seasons": ["summer"],
+    "catch_bonus": {
+      "area": { "x": -1300, "y": -14, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "nebula_lagoon",
+    "body_name": "干潟星雲",
+    "mission_name": "スピッツァー宇宙望遠鏡",
+    "image_url": "/catalog-images/nebula_lagoon.jpg",
+    "credit_text": "NASA/JPL-Caltech",
+    "rarity": "rare",
+    "weight": 10,
+    "point": 30,
+    "capture_date": "2011-09-16",
+    "flavor_text": "いて座の天の川の中、銀河系の中心の方向に広がる散光星雲。渦巻くちりの雲の中では、今まさに新しい星々が生まれている。",
+    "seasons": ["summer"],
+    "catch_bonus": {
+      "area": { "x": -1380, "y": -22, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "nebula_helix",
+    "body_name": "らせん星雲",
+    "mission_name": "GALEX",
+    "image_url": "/catalog-images/nebula_helix.jpg",
+    "credit_text": "NASA/JPL-Caltech",
+    "rarity": "rare",
+    "weight": 10,
+    "point": 30,
+    "capture_date": "2012-05-16",
+    "flavor_text": "みずがめ座にある、地球に最も近い惑星状星雲。太陽のような星が一生の終わりに外側のガスを吹き出してできた、巨大な目のような姿をしている。",
+    "seasons": ["autumn"],
+    "catch_bonus": {
+      "area": { "x": -1460, "y": 0, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "galaxy_m33",
+    "body_name": "さんかく座銀河",
+    "mission_name": "スピッツァー宇宙望遠鏡",
+    "image_url": "/catalog-images/galaxy_m33.jpg",
+    "credit_text": "NASA/JPL-Caltech/Univ. of Ariz.",
+    "rarity": "rare",
+    "weight": 10,
+    "point": 30,
+    "capture_date": "2009-04-03",
+    "flavor_text": "約300万光年先にある渦巻き銀河。天の川銀河と同じ局所銀河群に属する、宇宙のご近所さんのひとつだ。",
+    "seasons": ["autumn"],
+    "catch_bonus": {
+      "area": { "x": -1540, "y": -82, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "nebula_flaming_star",
+    "body_name": "まがたま星雲",
+    "mission_name": "WISE",
+    "image_url": "/catalog-images/nebula_flaming_star.jpg",
+    "credit_text": "NASA/JPL-Caltech/UCLA",
+    "rarity": "rare",
+    "weight": 10,
+    "point": 30,
+    "capture_date": "2010-11-24",
+    "flavor_text": "ぎょしゃ座にある星雲。生まれ故郷から猛スピードで飛び出してきた「暴走星」が、まわりのガスとちりを燃え上がるように照らしている。",
+    "seasons": ["winter"],
+    "catch_bonus": {
+      "area": { "x": -1620, "y": 36, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "nebula_jellyfish",
+    "body_name": "クラゲ星雲",
+    "mission_name": "WISE",
+    "image_url": "/catalog-images/nebula_jellyfish.jpg",
+    "credit_text": "NASA/JPL-Caltech/UCLA",
+    "rarity": "rare",
+    "weight": 10,
+    "point": 30,
+    "capture_date": "2010-12-09",
+    "flavor_text": "ふたご座の方向にある超新星残骸。星が大爆発した名残のガスが、クラゲのような形に広がりながら周囲の雲とぶつかり合っている。",
+    "seasons": ["winter"],
+    "catch_bonus": {
+      "area": { "x": -1700, "y": -55, "radius": 35 },
+      "area_multiplier": 3
+    }
   }
 ]
