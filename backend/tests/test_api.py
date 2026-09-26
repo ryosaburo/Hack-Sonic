@@ -1,10 +1,14 @@
-from fastapi.testclient import TestClient
 import json
 
+from fastapi.testclient import TestClient
+from sqlmodel import Session, select
+
+from app.database import CATALOG_SEED_PATH, RETIRED_CATALOG_IDS, engine, sync_catalog_from_seed
 from app.main import app
-from app.database import CATALOG_SEED_PATH
+from app.models import CatalogEntry, Collection, User
 
 RARITIES = {"common", "rare", "super_rare", "legendary"}
+SEED_IDS = [item["id"] for item in json.loads(CATALOG_SEED_PATH.read_text(encoding="utf-8"))]
 
 
 def test_root_ok():
@@ -19,8 +23,41 @@ def test_catalog_lists_all_seeded_entries():
         res = client.get("/api/catalog")
         assert res.status_code == 200
         data = res.json()
-        assert len(data) == len(json.loads(CATALOG_SEED_PATH.read_text()))
+        assert len(data) == len(SEED_IDS)
         assert {"id", "body_name", "mission_name", "rarity", "flavor_text", "point"} <= set(data[0].keys())
+
+
+def test_seed_adds_new_entries_to_existing_db():
+    with TestClient(app) as client:
+        # シードに後から足された天体を、既存DBから消して再現する
+        added_later = SEED_IDS[-1]
+        with Session(engine) as session:
+            session.delete(session.get(CatalogEntry, added_later))
+            session.commit()
+
+        sync_catalog_from_seed()
+
+        ids = {e["id"] for e in client.get("/api/catalog").json()}
+        assert ids == set(SEED_IDS)
+
+
+def test_seed_removes_retired_entries_and_their_records():
+    with TestClient(app) as client:
+        headers = {"X-Device-Id": "retired-entry-device"}
+        client.get("/api/collection", headers=headers)  # ユーザーを作る
+        # 改名前のIDで釣った記録が残っている既存DBを再現する
+        with Session(engine) as session:
+            base = session.get(CatalogEntry, SEED_IDS[0])
+            session.add(CatalogEntry(**{**base.model_dump(), "id": RETIRED_CATALOG_IDS[0]}))
+            user = session.exec(select(User).where(User.device_id == headers["X-Device-Id"])).one()
+            session.add(Collection(user_id=user.id, species_id=RETIRED_CATALOG_IDS[0]))
+            session.commit()
+
+        sync_catalog_from_seed()
+
+        ids = {e["id"] for e in client.get("/api/catalog").json()}
+        assert RETIRED_CATALOG_IDS[0] not in ids
+        assert client.get("/api/collection", headers=headers).json() == []
 
 
 def test_cast_start_returns_valid_rarity_and_time_limit():
