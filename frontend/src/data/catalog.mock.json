@@ -34,9 +34,8 @@
     "point": 30,
     "capture_date": "2016-01-07",
     "flavor_text": "紫外線と赤外線でとらえた金星の分厚い雲。地表とは異なる速さで大気全体が渦を巻いて流れている。",
+    "seasons": ["autumn"],
     "catch_bonus": {
-      "seasons": ["autumn"],
-      "season_multiplier": 2,
       "area": { "x": 180, "y": -11, "radius": 35 },
       "area_multiplier": 3
     }
@@ -88,9 +87,8 @@
     "point": 100,
     "capture_date": "2021-10-02",
     "flavor_text": "太陽に最も近い惑星、水星のすぐそばをかすめた際に記録された一枚。無数のクレーターが刻まれている。",
+    "seasons": ["spring"],
     "catch_bonus": {
-      "seasons": ["summer"],
-      "season_multiplier": 2,
       "area": { "x": 100, "y": -18, "radius": 35 },
       "area_multiplier": 3
     }
@@ -160,9 +158,8 @@
     "point": 30,
     "capture_date": "2003-08-26",
     "flavor_text": "約6万年ぶりの大接近を迎えた赤い惑星。白く輝く極冠と、赤茶けた大地に広がる濃淡の模様がくっきりと見える。",
+    "seasons": ["winter"],
     "catch_bonus": {
-      "seasons": ["winter"],
-      "season_multiplier": 2,
       "area": { "x": 420, "y": -13, "radius": 35 },
       "area_multiplier": 3
     }
@@ -178,9 +175,8 @@
     "point": 30,
     "capture_date": "2000-12-29",
     "flavor_text": "土星へ向かう探査機が途中で立ち寄った太陽系最大の惑星。縞模様の雲の帯の中で、地球より大きな嵐・大赤斑が渦を巻く。",
+    "seasons": ["winter"],
     "catch_bonus": {
-      "seasons": ["winter"],
-      "season_multiplier": 2,
       "area": { "x": 580, "y": 34, "radius": 35 },
       "area_multiplier": 3
     }
@@ -196,9 +192,8 @@
     "point": 100,
     "capture_date": "2013-07-19",
     "flavor_text": "太陽を背にして輝く環をまとった土星。環の外側の暗闇には、はるか遠くの地球がほんの小さな光の点として写り込んでいる。",
+    "seasons": ["autumn"],
     "catch_bonus": {
-      "seasons": ["autumn"],
-      "season_multiplier": 2,
       "area": { "x": 660, "y": 22, "radius": 35 },
       "area_multiplier": 3
     }
@@ -214,9 +209,8 @@
     "point": 100,
     "capture_date": "2023-02-06",
     "flavor_text": "自転軸が横倒しになったまま太陽のまわりを回る氷の巨大惑星。赤外線の目で見ると、淡い環と極域の明るい雲が浮かび上がる。",
+    "seasons": ["summer"],
     "catch_bonus": {
-      "seasons": ["autumn"],
-      "season_multiplier": 2,
       "area": { "x": 740, "y": 69, "radius": 35 },
       "area_multiplier": 3
     }
@@ -232,9 +226,8 @@
     "point": 100,
     "capture_date": "1989-08-25",
     "flavor_text": "太陽系のいちばん外側を回る青い惑星。これまでに唯一そばを訪れた探査機が、大暗斑と呼ばれる巨大な嵐をとらえた。",
+    "seasons": ["summer"],
     "catch_bonus": {
-      "seasons": ["autumn"],
-      "season_multiplier": 2,
       "area": { "x": 820, "y": -36, "radius": 35 },
       "area_multiplier": 3
     }
