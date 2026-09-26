@@ -3,14 +3,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .database import create_db_and_tables, seed_catalog_if_empty
+from .database import create_db_and_tables, sync_catalog_from_seed
 from .routers import cast, catalog, collection
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
-    seed_catalog_if_empty()
+    sync_catalog_from_seed()
     yield
 
 
