@@ -80,6 +80,46 @@
   opacity: 0.7;
 }
 
+/* 記録済みの天体の画像。四隅に見当マーク（魚拓・図鑑の詳細と同じ） */
+.result-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.2rem 0 0;
+}
+
+.result-plate {
+  display: block;
+  width: 160px;
+  height: 160px;
+  padding: 10px;
+  --zk-mark: var(--zk-brass);
+  background:
+    linear-gradient(var(--zk-mark), var(--zk-mark)) top left / 12px 1px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) top left / 1px 12px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) top right / 12px 1px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) top right / 1px 12px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) bottom left / 12px 1px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) bottom left / 1px 12px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) bottom right / 12px 1px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) bottom right / 1px 12px;
+  background-repeat: no-repeat;
+}
+
+.result-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+.result-credit {
+  font-size: 0.68rem;
+  color: var(--zk-ink-muted);
+}
+
 .body-name {
   margin: 0;
   font-family: var(--zk-font-serif);
