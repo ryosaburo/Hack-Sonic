@@ -55,7 +55,17 @@ export function ResultOverlay() {
           </span>
           {RARITY_LABEL[entry.rarity]}
         </p>
-        <Reticle className="result-reticle silhouette" />
+        {isNew ? (
+          <Reticle className="result-reticle silhouette" />
+        ) : (
+          // 図鑑に記録済みの天体は正体がわかっているので、画像をそのまま見せる
+          <figure className="result-figure">
+            <span className="result-plate">
+              <img src={entry.image_url} alt={entry.body_name} className="result-image" />
+            </span>
+            <figcaption className="result-credit">{entry.credit_text}</figcaption>
+          </figure>
+        )}
         <p className="body-name" id="result-body-name">
           {entry.body_name}
         </p>
