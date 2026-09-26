@@ -1,228 +1,649 @@
+/* 図鑑: 星図・天文台の観測台帳。色はすべてこのトークンから取る */
 .zukan-screen {
+  --zk-bg: #0b0f1a;
+  --zk-surface: #101522;
+  --zk-ink: #e4dfd0;
+  --zk-ink-muted: #9c988b;
+  --zk-ink-faint: #5d6070;
+  --zk-rule: #262d3d;
+  --zk-rule-strong: #3a4356;
+  --zk-brass: #b8955a;
+
+  --zk-font-serif: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  --zk-font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --zk-radius: 3px;
+  --zk-plate: 72px;
+
   position: absolute;
   inset: 0;
-  background: #05060f;
-  color: #eaf2ff;
-  display: flex;
-  flex-direction: column;
-  padding: 1rem clamp(1rem, 4vw, 2.5rem);
-  overflow-y: auto;
   z-index: 5;
+  overflow: hidden;
+  background: var(--zk-bg);
+  color: var(--zk-ink);
+  animation: zk-enter 0.24s ease-out;
 }
 
+.zukan-scroll {
+  height: 100%;
+  overflow-y: auto;
+  padding: 1.25rem clamp(1rem, 4vw, 2.5rem) 2rem;
+}
+
+.zk-num {
+  font-family: var(--zk-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.zk-symbol {
+  display: inline-block;
+  width: 1.2em;
+  text-align: center;
+  font-family: system-ui, sans-serif;
+  font-size: 1.05em;
+  line-height: 1;
+}
+
+.zk-rarity-common { color: var(--zk-ink-muted); }
+.zk-rarity-rare,
+.zk-rarity-super_rare { color: var(--zk-ink); }
+.zk-rarity-legendary { color: var(--zk-brass); }
+
+/* ---- ヘッダー ---- */
 .zukan-header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--zk-rule-strong);
 }
 
-.zukan-header h2 {
+.zukan-title {
   margin: 0;
+  font-family: var(--zk-font-serif);
+  font-weight: 700;
+  font-size: 1.6rem;
+  letter-spacing: 0.2em;
+  line-height: 1.2;
+}
+
+.zukan-subtitle {
+  margin-left: 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  color: var(--zk-ink-muted);
+}
+
+/* ---- ボタン共通（図鑑内のみ） ---- */
+.zukan-screen .close-btn,
+.zukan-hint .primary-btn,
+.zukan-detail .secondary-btn {
+  border: 1px solid var(--zk-rule-strong);
+  border-radius: var(--zk-radius);
+  background: transparent;
+  color: var(--zk-ink);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 500;
   letter-spacing: 0.1em;
-}
-
-.close-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #eaf2ff;
-  border-radius: 999px;
-  padding: 0.4rem 1rem;
   cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
 }
 
+.zukan-screen .close-btn:hover,
+.zukan-hint .primary-btn:hover,
+.zukan-detail .secondary-btn:hover {
+  border-color: var(--zk-brass);
+  color: var(--zk-brass);
+}
+
+.zukan-screen button:focus-visible {
+  outline: 2px solid var(--zk-brass);
+  outline-offset: 2px;
+}
+
+/* ---- 進捗: 10%ごとの目盛り付き単色バー ---- */
 .zukan-progress {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  margin: 0.8rem 0;
+  gap: 0.9rem;
+  margin: 1rem 0 0.6rem;
+}
+
+.zukan-progress-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--zk-ink-muted);
+  white-space: nowrap;
+}
+
+.zukan-progress-label .zk-num {
+  margin-left: 0.3rem;
+  font-size: 0.95rem;
+  color: var(--zk-ink);
 }
 
 .zukan-progress-bar {
+  position: relative;
   flex: 1;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  overflow: hidden;
+  height: 8px;
+  border: 1px solid var(--zk-rule-strong);
+  border-radius: 1px;
 }
 
 .zukan-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7bc8ff, #ffd76b);
+  background: var(--zk-brass);
 }
 
-.zukan-progress-label {
-  font-size: 0.8rem;
-  color: #9fb3d9;
-  white-space: nowrap;
+/* 目盛りは塗りの上にも重ねる（色の境目を切った線なので見た目はグラデーションにならない） */
+.zukan-progress-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(10% - 1px),
+    var(--zk-rule-strong) calc(10% - 1px) 10%
+  );
+  pointer-events: none;
 }
 
+/* ---- レア度フィルター: 下線付きの文字切り替え ---- */
 .zukan-filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: 0.2rem 1.1rem;
+  margin-bottom: 1.4rem;
+  border-bottom: 1px solid var(--zk-rule);
 }
 
-.filter-chip {
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.06);
-  color: #cfd6e6;
-  border-radius: 999px;
-  padding: 0.35rem 0.9rem;
+.zukan-screen .filter-chip {
+  margin-bottom: -1px;
+  padding: 0.5rem 0 0.45rem;
+  border: none;
+  border-bottom: 1px solid transparent;
+  background: none;
+  color: var(--zk-ink-muted);
   font-size: 0.8rem;
+  letter-spacing: 0.05em;
   cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
 
-.filter-chip.active {
-  background: rgba(255, 255, 255, 0.22);
-  color: #fff;
+.zukan-screen .filter-chip:hover {
+  color: var(--zk-ink);
 }
 
-.zukan-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 0.7rem;
-  padding-bottom: 1.5rem;
+.zukan-screen .filter-chip.active {
+  color: var(--zk-ink);
+  border-bottom-color: var(--zk-brass);
 }
 
-.zukan-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 0.6rem;
-  cursor: pointer;
-  color: #cfd6e6;
+.zukan-screen .filter-chip .zk-symbol {
+  margin-right: 0.25rem;
 }
 
-.zukan-card.collected.rarity-rare { border-color: rgba(212, 175, 55, 0.5); }
-.zukan-card.collected.rarity-super_rare { border-color: rgba(224, 176, 255, 0.5); }
-.zukan-card.collected.rarity-legendary { border-color: rgba(255, 215, 107, 0.6); }
-
-.zukan-no {
-  font-size: 0.65rem;
-  color: #6f7ea6;
-  align-self: flex-start;
-}
-
-.zukan-thumb {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 8px;
-  object-fit: cover;
-  background: #000;
-}
-
-.silhouette-thumb {
-  background: #000;
-}
-
-.zukan-name {
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-align: center;
-}
-
-.zukan-mission {
-  font-size: 0.65rem;
-  color: #9fb3d9;
-}
-
-.zukan-badge {
-  font-size: 0.65rem;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.hint-card,
-.detail-card {
-  background: radial-gradient(circle at 30% 20%, #171a2e, #05060f);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
-  padding: 1.4rem;
-  max-width: 320px;
-  width: 90%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-  text-align: center;
-}
-
-.hint-title {
-  color: #cfd6e6;
-  margin: 0;
-}
-
-.hint-stars {
-  color: #ffd76b;
-  font-size: 1.3rem;
-  margin: 0;
-}
-
-.hint-desc {
-  color: #8b9ac2;
-  font-size: 0.85rem;
-  margin: 0 0 0.6rem;
-}
-
-.detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.detail-image {
-  width: 180px;
-  height: 180px;
-  border-radius: 12px;
-  object-fit: cover;
-  background: #000;
-}
-
-.detail-dates,
-.flavor-text {
-  color: #9fb3d9;
-  font-size: 0.8rem;
-  margin: 0;
-}
-
-.flavor-text {
-  color: #cfd6e6;
-  line-height: 1.5;
-}
-
+/* ---- 季節セクション: 天球図の区切り ---- */
 .zukan-season {
-  padding-bottom: 0.4rem;
+  margin-bottom: 1.8rem;
+  animation: zk-enter 0.28s ease-out both;
 }
 
 .zukan-season-title {
   display: flex;
   align-items: baseline;
-  gap: 0.6rem;
-  margin: 0.4rem 0 0.6rem;
-  font-size: 1rem;
-  letter-spacing: 0.1em;
-  color: #cfd6e6;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.8rem;
+  margin: 0;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--zk-brass);
+  font-weight: 400;
+}
+
+.zukan-season-name {
+  font-family: var(--zk-font-serif);
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: 0.3em;
+  color: var(--zk-ink);
 }
 
 .zukan-season-now {
+  align-self: center;
+  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--zk-brass);
+  border-radius: 2px;
   font-size: 0.65rem;
-  letter-spacing: 0;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  border: 1px solid currentColor;
+  letter-spacing: 0.1em;
+  color: var(--zk-brass);
+}
+
+.zukan-season-ra {
+  margin-left: auto;
+  font-family: var(--zk-font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--zk-ink-faint);
 }
 
 .zukan-season-count {
-  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--zk-ink-muted);
+}
+
+/* 金線の下に、赤経の目盛り（大目盛り5本ごと） */
+.zukan-season-scale {
+  height: 7px;
+  margin-bottom: 0.2rem;
+  background:
+    repeating-linear-gradient(90deg, var(--zk-rule-strong) 0 1px, transparent 1px 60px) top left / 100% 7px no-repeat,
+    repeating-linear-gradient(90deg, var(--zk-rule) 0 1px, transparent 1px 12px) top left / 100% 4px no-repeat;
+}
+
+/* ---- 台帳 ---- */
+.zukan-ledger {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.zukan-ledger li + li {
+  border-top: 1px solid var(--zk-rule);
+}
+
+.zukan-card {
+  display: grid;
+  grid-template-columns: var(--zk-plate) 5.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.6rem 0.4rem;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: var(--zk-ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.zukan-card:hover {
+  background: var(--zk-surface);
+}
+
+.zukan-plate {
+  display: block;
+  width: var(--zk-plate);
+  aspect-ratio: 1;
+  border: 1px solid var(--zk-rule-strong);
+}
+
+.zukan-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.zukan-no {
+  font-size: 1.15rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--zk-ink);
+}
+
+.zukan-card.unknown .zukan-no {
+  color: var(--zk-ink-faint);
+}
+
+.zukan-names {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.zukan-name {
+  font-family: var(--zk-font-serif);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  overflow-wrap: anywhere;
+}
+
+.zukan-card.unknown .zukan-name {
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  color: var(--zk-ink-faint);
+}
+
+.zukan-mission {
+  font-size: 0.72rem;
+  color: var(--zk-ink-muted);
+}
+
+.zukan-rarity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   font-size: 0.75rem;
-  letter-spacing: 0;
-  font-weight: 400;
-  color: #9fb3d9;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.zukan-card .zk-symbol {
+  font-size: 1rem;
+}
+
+/* ---- 未観測の照準 ---- */
+.zk-reticle {
+  position: relative;
+  display: block;
+  border: 1px dashed var(--zk-rule-strong);
+}
+
+.zk-reticle::before,
+.zk-reticle::after {
+  content: '';
+  position: absolute;
+  background: var(--zk-rule-strong);
+}
+
+.zk-reticle::before {
+  top: 18%;
+  bottom: 18%;
+  left: 50%;
+  width: 1px;
+}
+
+.zk-reticle::after {
+  left: 18%;
+  right: 18%;
+  top: 50%;
+  height: 1px;
+}
+
+.zk-reticle-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: 5px;
+  height: 5px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: var(--zk-bg);
+  box-shadow: 0 0 0 1px var(--zk-ink-faint);
+}
+
+/* ---- ヒント・詳細カード（観測カード） ---- */
+.zukan-screen .hint-card,
+.zukan-screen .detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  width: min(92%, 360px);
+  max-height: calc(100% - 2rem);
+  overflow-y: auto;
+  padding: 1.2rem;
+  border: 1px solid var(--zk-rule-strong);
+  border-radius: 2px;
+  background: var(--zk-bg);
+  color: var(--zk-ink);
+  animation: zk-enter 0.2s ease-out;
+}
+
+.zk-eyebrow {
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  color: var(--zk-ink-muted);
+}
+
+.zukan-hint {
+  align-items: center;
+  text-align: center;
+}
+
+.hint-reticle {
+  width: 120px;
+  aspect-ratio: 1;
+  margin: 0.4rem 0;
+}
+
+.hint-title {
+  margin: 0;
+  font-family: var(--zk-font-serif);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.3em;
+}
+
+.hint-rarity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.hint-desc {
+  margin: 0 0 0.3rem;
+  font-size: 0.8rem;
+  color: var(--zk-ink-muted);
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.detail-header .close-btn {
+  margin-left: auto;
+}
+
+.detail-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.3rem 0 0;
+}
+
+/* 図版の四隅に見当マーク */
+.detail-plate {
+  position: relative;
+  display: block;
+  padding: 10px;
+  --zk-mark: var(--zk-brass);
+  background:
+    linear-gradient(var(--zk-mark), var(--zk-mark)) top left / 12px 1px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) top left / 1px 12px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) top right / 12px 1px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) top right / 1px 12px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) bottom left / 12px 1px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) bottom left / 1px 12px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) bottom right / 12px 1px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) bottom right / 1px 12px;
+  background-repeat: no-repeat;
+}
+
+.detail-image {
+  display: block;
+  width: 180px;
+  height: 180px;
+  object-fit: cover;
+}
+
+.zukan-detail .credit-text {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--zk-ink-muted);
+}
+
+.zukan-detail .body-name {
+  margin: 0.2rem 0 0;
+  font-family: var(--zk-font-serif);
+  font-weight: 700;
+  font-size: 1.35rem;
+  letter-spacing: 0.08em;
+  color: var(--zk-ink);
+  text-align: center;
+}
+
+.detail-specs {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin: 0;
+  border-top: 1px solid var(--zk-rule-strong);
+  font-size: 0.8rem;
+}
+
+.detail-specs dt,
+.detail-specs dd {
+  margin: 0;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--zk-rule);
+}
+
+.detail-specs dt {
+  padding-right: 0.9rem;
+  border-right: 1px solid var(--zk-rule);
+  color: var(--zk-ink-muted);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.detail-specs dd {
+  padding-left: 0.9rem;
+  color: var(--zk-ink);
+}
+
+.zukan-detail .mission-name {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--zk-ink);
+}
+
+.zukan-detail .flavor-text {
+  margin: 0.2rem 0 0;
+  padding: 0.1rem 0 0.1rem 0.9rem;
+  border-left: 1px solid var(--zk-brass);
+  font-family: var(--zk-font-serif);
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: var(--zk-ink);
+}
+
+.flavor-label {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-family: var(--zk-font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: var(--zk-brass);
+}
+
+.zukan-detail .secondary-btn {
+  align-self: center;
+  margin-top: 0.3rem;
+  padding: 0.55rem 1.2rem;
+}
+
+/* ---- モーション ---- */
+@keyframes zk-enter {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 魚拓演出（GyotakuReveal）も図鑑の中に描かれるので、図鑑自身の要素だけ止める */
+  .zukan-screen,
+  .zukan-season,
+  .zukan-screen .hint-card,
+  .zukan-screen .detail-card {
+    animation: none;
+  }
+
+  .zukan-screen .close-btn,
+  .zukan-screen .filter-chip,
+  .zukan-card,
+  .zukan-hint .primary-btn,
+  .zukan-detail .secondary-btn {
+    transition: none;
+  }
+}
+
+/* ---- スマホ幅 ---- */
+@media (max-width: 480px) {
+  .zukan-screen {
+    --zk-plate: 56px;
+  }
+
+  .zukan-filters {
+    flex-wrap: nowrap;
+    gap: 0.9rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .zukan-screen .filter-chip {
+    flex: none;
+    font-size: 0.75rem;
+  }
+
+  .zukan-card {
+    grid-template-columns: var(--zk-plate) minmax(0, 1fr) auto;
+    grid-template-areas:
+      'plate no rarity'
+      'plate names rarity';
+    column-gap: 0.8rem;
+    row-gap: 0.1rem;
+  }
+
+  .zukan-plate {
+    grid-area: plate;
+  }
+
+  .zukan-no {
+    grid-area: no;
+    font-size: 1rem;
+  }
+
+  .zukan-names {
+    grid-area: names;
+  }
+
+  .zukan-rarity {
+    grid-area: rarity;
+  }
+
+  /* 記号だけ残し、レア度名は読み上げ用に残す */
+  .zukan-rarity-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .zukan-season-ra {
+    margin-left: 0;
+    order: 5;
+    flex-basis: 100%;
+  }
+
+  .zukan-season-count {
+    margin-left: auto;
+  }
 }
