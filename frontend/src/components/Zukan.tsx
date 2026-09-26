@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { SEASON_LABEL, SEASON_ORDER, type Season } from '../engine/seasons';
 import { RARITY_LABEL, RARITY_ORDER, type CatalogEntry, type Rarity } from '../types';
 import { GyotakuReveal } from './GyotakuReveal';
+import '../styles/observatory.css';
 import './Zukan.css';
 
 type FilterValue = 'all' | Rarity;
