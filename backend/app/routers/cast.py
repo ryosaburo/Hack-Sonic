@@ -3,7 +3,7 @@ import time
 import uuid
 from dataclasses import dataclass
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlmodel import Session, select
 
 from ..database import get_session
@@ -11,6 +11,7 @@ from ..deps import get_current_user
 from ..models import (
     CastResolveRequest,
     CastResolveResponse,
+    CastStartRequest,
     CastStartResponse,
     CatalogEntry,
     Collection,
@@ -42,6 +43,7 @@ ATTEMPT_TTL_SECONDS = 5 * 60
 class Attempt:
     user_id: int
     rarity: str
+    season: str | None
     created_at: float
 
 
@@ -56,21 +58,34 @@ def _cleanup_expired_attempts():
         _attempts.pop(k, None)
 
 
-def _draw_rarity() -> str:
-    rarities = list(RARITY_WEIGHTS.keys())
-    weights = list(RARITY_WEIGHTS.values())
+def _in_season_entries(session: Session, season: str | None) -> list[CatalogEntry]:
+    entries = session.exec(select(CatalogEntry)).all()
+    if season is None:
+        return list(entries)
+    filtered = [e for e in entries if e.seasons is None or season in e.seasons]
+    # 今の季節に釣れるものが無いときは絞らない（フロントのフォールバックと同じ挙動）
+    return filtered or list(entries)
+
+
+def _draw_rarity(available: set[str]) -> str:
+    # その季節に候補が無いレア度は抽選しない（resolveで天体が見つからなくなるのを防ぐ）
+    rarities = [r for r in RARITY_WEIGHTS if r in available] or list(RARITY_WEIGHTS)
+    weights = [RARITY_WEIGHTS[r] for r in rarities]
     return random.choices(rarities, weights=weights, k=1)[0]
 
 
 @router.post("/start", response_model=CastStartResponse)
 def cast_start(
+    body: CastStartRequest | None = Body(default=None),
     session: Session = Depends(get_session),
     user: User = Depends(get_current_user),
 ):
     _cleanup_expired_attempts()
-    rarity = _draw_rarity()
+    season = body.season if body else None
+    candidates = _in_season_entries(session, season)
+    rarity = _draw_rarity({c.rarity for c in candidates})
     attempt_id = str(uuid.uuid4())
-    _attempts[attempt_id] = Attempt(user_id=user.id, rarity=rarity, created_at=time.time())
+    _attempts[attempt_id] = Attempt(user_id=user.id, rarity=rarity, season=season, created_at=time.time())
     return CastStartResponse(
         attempt_id=attempt_id,
         rarity=rarity,
@@ -78,8 +93,8 @@ def cast_start(
     )
 
 
-def _draw_entry_for_rarity(session: Session, rarity: str) -> CatalogEntry | None:
-    candidates = session.exec(select(CatalogEntry).where(CatalogEntry.rarity == rarity)).all()
+def _draw_entry(session: Session, rarity: str, season: str | None) -> CatalogEntry | None:
+    candidates = [e for e in _in_season_entries(session, season) if e.rarity == rarity]
     if not candidates:
         return None
     weights = [c.weight for c in candidates]
@@ -99,7 +114,7 @@ def cast_resolve(
     if not body.success:
         return CastResolveResponse(success=False)
 
-    entry = _draw_entry_for_rarity(session, attempt.rarity)
+    entry = _draw_entry(session, attempt.rarity, attempt.season)
     if entry is None:
         raise HTTPException(status_code=500, detail="no catalog entries for this rarity")
 
