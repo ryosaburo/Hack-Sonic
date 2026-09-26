@@ -6,12 +6,18 @@ import { GyotakuReveal } from './components/GyotakuReveal';
 import { Zukan } from './components/Zukan';
 import { ExchangeShop, EconomyHud, TransactionStatus } from './components/ExchangeShop';
 import { LaunchIntro } from './components/LaunchIntro';
+import { setBgmDucked, setBgmSeason, startBgm } from './engine/bgm';
 import './App.css';
 
 function App() {
   const [arrived, setArrived] = useState(false);
-  const enterFishing = useCallback(() => setArrived(true), []);
+  const enterFishing = useCallback(() => {
+    // スキップのクリック中にも呼ばれるので、その操作でAudioContextを解禁してBGMを始められる
+    try { startBgm(useGameStore.getState().season); } catch { /* 音が出せなくても釣りは続けられる */ }
+    setArrived(true);
+  }, []);
   const phase = useGameStore((s) => s.phase);
+  const season = useGameStore((s) => s.season);
   const currentEntry = useGameStore((s) => s.currentEntry);
   const isNewSpecies = useGameStore((s) => s.isNewSpecies);
   const returnToIdle = useGameStore((s) => s.returnToIdle);
@@ -21,6 +27,14 @@ function App() {
   useEffect(() => {
     loadCatalog();
   }, [loadCatalog]);
+
+  // BGMは季節に合わせて移ろい、巻き上げ・結果・魚拓演出の間は効果音を聞かせるため控えめにする
+  useEffect(() => {
+    setBgmSeason(season);
+  }, [season]);
+  useEffect(() => {
+    setBgmDucked(phase === 'reeling' || phase === 'result' || phase === 'gyotaku');
+  }, [phase]);
 
   if (!arrived) {
     return <div className="app-root"><LaunchIntro onComplete={enterFishing} /></div>;
