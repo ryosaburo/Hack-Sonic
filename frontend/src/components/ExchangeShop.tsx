@@ -1,6 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
+import '../styles/observatory.css';
 import './ExchangeShop.css';
+
+const KIND_LABEL: Record<string, string> = {
+  consumable: '消耗品・1投分',
+  permanent: '永久装備・自動装備',
+  information: '釣り場情報・永続',
+};
 
 export function ExchangeShop() {
   const phase = useGameStore(s => s.phase);
@@ -18,32 +25,44 @@ export function ExchangeShop() {
   return (
     <dialog ref={dialog} className="exchange-shop" aria-labelledby="shop-title" onCancel={closeShop}>
       <header className="shop-header">
-        <div><h2 id="shop-title">星の交換所</h2><p>所持ポイント <strong>{economy.balance} pt</strong></p></div>
-        <button className="secondary-btn" onClick={closeShop} aria-label="交換所を閉じる">閉じる</button>
+        <h2 id="shop-title" className="shop-title">星の交換所<span className="shop-subtitle">観測機材目録</span></h2>
+        <button className="close-btn" onClick={closeShop} aria-label="交換所を閉じる">閉じる</button>
       </header>
+      <p className="shop-balance">所持ポイント <strong className="zk-num">{economy.balance} pt</strong></p>
       <p className="shop-intro">記録済みの天体を釣ってポイントを集め、次の釣りに備えよう。</p>
-      {error && <p role="alert">{error} <button onClick={dismissError}>閉じる</button></p>}
-      <div className="shop-products">
-        {products.map(product => {
-          const owned = economy.inventory[product.id] ?? 0;
-          const permanentOwned = product.kind !== 'consumable' && owned > 0;
-          const insufficient = economy.balance < product.price;
-          return <article className="shop-product" key={product.id}>
-            <span className="shop-kind">{product.kind === 'consumable' ? '消耗品・1投分' : product.kind === 'permanent' ? '永久装備・自動装備' : '釣り場情報・永続'}</span>
-            <h3>{product.name}</h3><p>{product.description}</p>
-            <div className="shop-purchase"><span>{product.price} pt</span>
-              <button className="primary-btn" disabled={permanentOwned || insufficient} onClick={() => void buy(product.id)}>
-                {permanentOwned ? '購入済み' : insufficient ? 'ポイント不足' : '交換する'}
-              </button>
-            </div>
-            {product.kind === 'consumable' && <small>所持数：{owned}</small>}
-          </article>;
-        })}
-      </div>
-      {economy.spots.map(spot => <section className="shop-spot" key={spot.id}>
-        <h3>{spot.name}の情報</h3>
-        <p>投入点の座標：X {spot.x_min / 10}〜{spot.x_max / 10} ／ Y {-spot.y_max / 10}〜{-spot.y_min / 10}</p>
-        <p>全季節で高レアリティの出現率がアップ。海に戻ると範囲が表示されます。</p>
+      {error && <p className="shop-error" role="alert">{error} <button className="close-btn" onClick={dismissError}>閉じる</button></p>}
+      <section className="shop-section" aria-labelledby="shop-products-title">
+        <h3 id="shop-products-title" className="shop-section-title">目録<span className="shop-section-count zk-num">{products.length} 品</span></h3>
+        <ol className="shop-products">
+          {products.map((product, i) => {
+            const owned = economy.inventory[product.id] ?? 0;
+            const permanentOwned = product.kind !== 'consumable' && owned > 0;
+            const insufficient = economy.balance < product.price;
+            return <li className={`shop-product ${permanentOwned ? 'owned' : ''}`} key={product.id}>
+              <span className="shop-no zk-num">No.{String(i + 1).padStart(2, '0')}</span>
+              <div className="shop-body">
+                <h4 className="shop-name">{product.name}</h4>
+                <span className="shop-kind">{KIND_LABEL[product.kind] ?? product.kind}</span>
+                <p className="shop-desc">{product.description}</p>
+                {product.kind === 'consumable' && <small className="shop-owned">所持数 <span className="zk-num">{owned}</span></small>}
+              </div>
+              <div className="shop-purchase">
+                <span className="shop-price zk-num">{product.price} pt</span>
+                <button className="primary-btn" disabled={permanentOwned || insufficient} onClick={() => void buy(product.id)}>
+                  {permanentOwned ? '購入済み' : insufficient ? 'ポイント不足' : '交換する'}
+                </button>
+              </div>
+            </li>;
+          })}
+        </ol>
+      </section>
+      {economy.spots.map(spot => <section className="shop-section shop-spot" key={spot.id} aria-labelledby={`shop-spot-${spot.id}`}>
+        <h3 id={`shop-spot-${spot.id}`} className="shop-section-title">{spot.name}の情報</h3>
+        <dl className="shop-spot-specs">
+          <dt>投入点 X</dt><dd className="zk-num">{spot.x_min / 10} — {spot.x_max / 10}</dd>
+          <dt>投入点 Y</dt><dd className="zk-num">{-spot.y_max / 10} — {-spot.y_min / 10}</dd>
+        </dl>
+        <p className="shop-spot-note">全季節で高レアリティの出現率がアップ。海に戻ると範囲が表示されます。</p>
       </section>)}
     </dialog>
   );
