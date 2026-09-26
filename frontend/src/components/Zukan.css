@@ -196,3 +196,33 @@
   color: #cfd6e6;
   line-height: 1.5;
 }
+
+.zukan-season {
+  padding-bottom: 0.4rem;
+}
+
+.zukan-season-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0.4rem 0 0.6rem;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  color: #cfd6e6;
+}
+
+.zukan-season-now {
+  font-size: 0.65rem;
+  letter-spacing: 0;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+
+.zukan-season-count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  letter-spacing: 0;
+  font-weight: 400;
+  color: #9fb3d9;
+}

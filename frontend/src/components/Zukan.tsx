@@ -1,26 +1,40 @@
 import { useMemo, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
-import { RARITY_LABEL, RARITY_ORDER, type Rarity } from '../types';
+import { SEASON_LABEL, SEASON_LOOKS, SEASON_ORDER, rgba, type Season } from '../engine/seasons';
+import { RARITY_LABEL, RARITY_ORDER, type CatalogEntry, type Rarity } from '../types';
 import { GyotakuReveal } from './GyotakuReveal';
 import './Zukan.css';
 
 type FilterValue = 'all' | Rarity;
+// 季節の指定がない天体は四季を通して釣れるので「通年」にまとめる
+type SeasonGroup = Season | 'all_year';
+
+const SEASON_GROUPS: SeasonGroup[] = [...SEASON_ORDER, 'all_year'];
+
+function inGroup(entry: CatalogEntry, group: SeasonGroup): boolean {
+  if (!entry.seasons?.length) return group === 'all_year';
+  return group !== 'all_year' && entry.seasons.includes(group);
+}
 
 export function Zukan() {
   const phase = useGameStore((s) => s.phase);
   const catalog = useGameStore((s) => s.catalog);
   const collection = useGameStore((s) => s.collection);
   const closeZukan = useGameStore((s) => s.closeZukan);
+  const currentSeason = useGameStore((s) => s.season);
 
   const [filter, setFilter] = useState<FilterValue>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hintId, setHintId] = useState<string | null>(null);
   const [replayId, setReplayId] = useState<string | null>(null);
 
-  const filtered = useMemo(
-    () => (filter === 'all' ? catalog : catalog.filter((c) => c.rarity === filter)),
-    [catalog, filter],
-  );
+  const sections = useMemo(() => {
+    const filtered = filter === 'all' ? catalog : catalog.filter((c) => c.rarity === filter);
+    return SEASON_GROUPS.map((group) => ({
+      group,
+      entries: filtered.filter((c) => inGroup(c, group)),
+    })).filter((section) => section.entries.length > 0);
+  }, [catalog, filter]);
 
   const collectedCount = Object.keys(collection).length;
 
@@ -72,35 +86,51 @@ export function Zukan() {
         ))}
       </div>
 
-      <div className="zukan-grid">
-        {filtered.map((entry) => {
-          const isCollected = Boolean(collection[entry.id]);
-          const no = String(catalog.indexOf(entry) + 1).padStart(3, '0');
-          return (
-            <button
-              key={entry.id}
-              type="button"
-              className={`zukan-card ${isCollected ? `collected rarity-${entry.rarity}` : 'unknown'}`}
-              onClick={() => (isCollected ? setSelectedId(entry.id) : setHintId(entry.id))}
-            >
-              <span className="zukan-no">No.{no}</span>
-              {isCollected ? (
-                <>
-                  <img src={entry.image_url} alt={entry.body_name} className="zukan-thumb" />
-                  <span className="zukan-name">{entry.body_name}</span>
-                  <span className="zukan-mission">{entry.mission_name}</span>
-                  <span className="zukan-badge">{RARITY_LABEL[entry.rarity]}</span>
-                </>
-              ) : (
-                <>
-                  <div className="zukan-thumb silhouette-thumb" />
-                  <span className="zukan-name">???</span>
-                </>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {sections.map(({ group, entries }) => {
+        const label = group === 'all_year' ? '通年' : SEASON_LABEL[group];
+        const accent = group === 'all_year' ? undefined : rgba(SEASON_LOOKS[group].accent, 1);
+        const sectionCollected = entries.filter((c) => collection[c.id]).length;
+        return (
+          <section key={group} className={`zukan-season zukan-season-${group}`}>
+            <h3 className="zukan-season-title" style={accent ? { color: accent } : undefined}>
+              {label}
+              {group === currentSeason && <span className="zukan-season-now">いまの季節</span>}
+              <span className="zukan-season-count">
+                {sectionCollected} / {entries.length}
+              </span>
+            </h3>
+            <div className="zukan-grid">
+              {entries.map((entry) => {
+                const isCollected = Boolean(collection[entry.id]);
+                const no = String(catalog.indexOf(entry) + 1).padStart(3, '0');
+                return (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    className={`zukan-card ${isCollected ? `collected rarity-${entry.rarity}` : 'unknown'}`}
+                    onClick={() => (isCollected ? setSelectedId(entry.id) : setHintId(entry.id))}
+                  >
+                    <span className="zukan-no">No.{no}</span>
+                    {isCollected ? (
+                      <>
+                        <img src={entry.image_url} alt={entry.body_name} className="zukan-thumb" />
+                        <span className="zukan-name">{entry.body_name}</span>
+                        <span className="zukan-mission">{entry.mission_name}</span>
+                        <span className="zukan-badge">{RARITY_LABEL[entry.rarity]}</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="zukan-thumb silhouette-thumb" />
+                        <span className="zukan-name">???</span>
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
 
       {hintEntry && !collection[hintEntry.id] && (
         <div className="overlay-backdrop" onClick={() => setHintId(null)}>
