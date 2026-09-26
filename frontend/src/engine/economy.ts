@@ -1,5 +1,5 @@
 import shop from '../data/shop.mock.json';
-import type { CatalogEntry, Rarity } from '../types';
+import type { CatalogEntry, CatchBonus, Rarity } from '../types';
 import type { Season } from './seasons';
 
 export interface Spot {
@@ -19,6 +19,14 @@ export const RARITY_WEIGHTS: Record<Rarity, number> = { common: 70, rare: 20, su
 export const inSpot = (spot: Spot, x: number, y: number) => x >= spot.x_min && x <= spot.x_max && y >= spot.y_min && y <= spot.y_max;
 export function mockEconomy(balance: number, inventory: Record<string, number>): Economy {
   return { balance, inventory, spots: shop.spots.filter(s => inventory[s.id] > 0) };
+}
+// 天体ごとの「釣れやすい場所」の開示価格（レア度別）。交換所の商品一覧には出さない
+export type CatchArea = NonNullable<CatchBonus['area']>;
+export const AREA_INFO_PRICES: Partial<Record<Rarity, number>> = shop.area_info_prices;
+export const areaInfoKey = (speciesId: string) => `area_info:${speciesId}`;
+// モック用：所持品に持っている開示済みの印から、座標範囲を引き直す
+export function mockAreas(catalog: CatalogEntry[], inventory: Record<string, number>): Record<string, CatchArea> {
+  return Object.fromEntries(catalog.flatMap(e => (inventory[areaInfoKey(e.id)] > 0 && e.catch_bonus?.area ? [[e.id, e.catch_bonus.area]] : [])));
 }
 export function weightedDraw<T>(values: T[], weights: number[]): T {
   let n = Math.random() * weights.reduce((a, b) => a + b, 0);

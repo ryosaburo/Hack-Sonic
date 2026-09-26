@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { SEASON_LABEL, SEASON_ORDER, type Season } from '../engine/seasons';
+import { AREA_INFO_PRICES } from '../engine/economy';
 import { RARITY_LABEL, RARITY_ORDER, type CatalogEntry, type Rarity } from '../types';
 import { GyotakuReveal } from './GyotakuReveal';
 import '../styles/observatory.css';
@@ -40,6 +41,45 @@ function Reticle({ className }: { className: string }) {
     <span className={`zk-reticle ${className}`} aria-hidden="true">
       <span className="zk-reticle-dot" />
     </span>
+  );
+}
+
+// 天体ごとの「釣れやすい場所」。rare以上はポイントで座標の範囲を開示できる（座標は釣り画面の表示と同じ単位）
+function AreaInfo({ entry }: { entry: CatalogEntry }) {
+  const area = useGameStore((s) => s.areas[entry.id]);
+  const balance = useGameStore((s) => s.economy.balance);
+  const disabled = useGameStore((s) => !s.ready || s.busy);
+  const revealArea = useGameStore((s) => s.revealArea);
+  const price = AREA_INFO_PRICES[entry.rarity];
+  if (!price) return null;
+
+  return (
+    <div className="zk-area">
+      <span className="flavor-label">釣れやすい場所</span>
+      {area ? (
+        <p className="zk-area-coord">
+          座標 <span className="zk-num">{area.x} / {area.y}</span>
+          <span className="zk-area-radius">
+            半径 <span className="zk-num">{area.radius}</span>
+          </span>
+        </p>
+      ) : (
+        <>
+          <p className="zk-area-note">ポイントと交換すると、この天体が釣れやすい座標を記録できる。</p>
+          <button
+            type="button"
+            className="zk-area-btn"
+            disabled={disabled || balance < price}
+            onClick={() => void revealArea(entry.id)}
+          >
+            {balance < price ? `ポイント不足（${price} pt）` : `${price} pt で開示する`}
+          </button>
+          <span className="zk-area-balance">
+            所持 <span className="zk-num">{balance} pt</span>
+          </span>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -204,6 +244,7 @@ export function Zukan() {
               {RARITY_LABEL[hintEntry.rarity]}
             </p>
             <p className="hint-desc">釣り上げて正体を確かめよう</p>
+            <AreaInfo entry={hintEntry} />
             <button type="button" className="primary-btn" onClick={() => setHintId(null)}>
               閉じる
             </button>
@@ -257,6 +298,7 @@ export function Zukan() {
               <span className="flavor-label">観測メモ</span>
               {selectedEntry.flavor_text}
             </blockquote>
+            <AreaInfo entry={selectedEntry} />
             <button
               type="button"
               className="secondary-btn"

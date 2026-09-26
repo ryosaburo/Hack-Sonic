@@ -61,7 +61,8 @@
 /* ---- ボタン共通（図鑑内のみ） ---- */
 .zukan-screen .close-btn,
 .zukan-hint .primary-btn,
-.zukan-detail .secondary-btn {
+.zukan-detail .secondary-btn,
+.zukan-screen .zk-area-btn {
   border: 1px solid var(--zk-rule-strong);
   border-radius: var(--zk-radius);
   background: transparent;
@@ -76,7 +77,8 @@
 
 .zukan-screen .close-btn:hover,
 .zukan-hint .primary-btn:hover,
-.zukan-detail .secondary-btn:hover {
+.zukan-detail .secondary-btn:hover,
+.zukan-screen .zk-area-btn:hover:enabled {
   border-color: var(--zk-brass);
   color: var(--zk-brass);
 }
@@ -536,6 +538,51 @@
   padding: 0.55rem 1.2rem;
 }
 
+/* ---- 釣れやすい場所（ポイントで開示） ---- */
+.zk-area {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
+  gap: 0.35rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--zk-rule-strong);
+  text-align: left;
+}
+
+.zk-area .flavor-label {
+  margin-bottom: 0;
+}
+
+.zk-area-coord {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--zk-ink);
+}
+
+.zk-area-radius {
+  margin-left: 0.8rem;
+  font-size: 0.75rem;
+  color: var(--zk-ink-muted);
+}
+
+.zk-area-note {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--zk-ink-muted);
+}
+
+.zukan-screen .zk-area-btn:disabled {
+  color: var(--zk-ink-faint);
+  cursor: not-allowed;
+}
+
+.zk-area-balance {
+  font-size: 0.7rem;
+  color: var(--zk-ink-muted);
+}
+
 /* ---- モーション ---- */
 @media (prefers-reduced-motion: reduce) {
   /* 魚拓演出（GyotakuReveal）も図鑑の中に描かれるので、図鑑自身の要素だけ止める */
@@ -550,7 +597,8 @@
   .zukan-screen .filter-chip,
   .zukan-card,
   .zukan-hint .primary-btn,
-  .zukan-detail .secondary-btn {
+  .zukan-detail .secondary-btn,
+  .zukan-screen .zk-area-btn {
     transition: none;
   }
 }
