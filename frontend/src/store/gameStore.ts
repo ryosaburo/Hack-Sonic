@@ -3,14 +3,25 @@ import type { CatalogEntry, CollectionRecord, GamePhase, Rarity, ReelPhaseMode }
 import { RARITY_CONFIG } from '../types';
 import * as api from '../api/client';
 import catalogMock from '../data/catalog.mock.json';
+import { seasonOf, type Season } from '../engine/seasons';
 
 function randomBetween(min: number, max: number) {
   return min + Math.random() * (max - min);
 }
 
+function isInSeason(entry: CatalogEntry, season: Season): boolean {
+  return !entry.seasons || entry.seasons.includes(season);
+}
+
+// 今の季節に釣れるものだけに絞る（該当なしのときは絞らない）
+function inSeason(catalog: CatalogEntry[], season: Season): CatalogEntry[] {
+  const filtered = catalog.filter((c) => isInSeason(c, season));
+  return filtered.length > 0 ? filtered : catalog;
+}
+
 // バックエンド未接続時のフォールバック抽選（担当Aがバックエンド完成前に演出を作り込めるように）。
-function drawFromMockCatalog(): CatalogEntry {
-  const catalog = catalogMock as CatalogEntry[];
+function drawFromMockCatalog(season: Season): CatalogEntry {
+  const catalog = inSeason(catalogMock as CatalogEntry[], season);
   const totalWeight = catalog.reduce((sum, c) => sum + c.weight, 0);
   let r = Math.random() * totalWeight;
   for (const entry of catalog) {
@@ -25,6 +36,7 @@ interface GameState {
   usingBackend: boolean;
   catalog: CatalogEntry[];
   collection: Record<string, CollectionRecord>;
+  season: Season;
 
   attemptId: string | null;
   currentEntry: CatalogEntry | null;
@@ -42,6 +54,7 @@ interface GameState {
   catchCount: number;
 
   loadCatalog: () => Promise<void>;
+  setSeason: (season: Season) => void;
   startCast: () => Promise<void>;
   triggerBite: () => void;
   pressStart: () => void;
@@ -60,6 +73,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   usingBackend: false,
   catalog: catalogMock as CatalogEntry[],
   collection: {},
+  season: seasonOf(new Date()),
 
   attemptId: null,
   currentEntry: null,
@@ -88,6 +102,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
   },
 
+  setSeason: (season: Season) => {
+    if (get().phase !== 'idle') return;
+    set({ season });
+  },
+
   startCast: async () => {
     const state = get();
     let rarity: Rarity;
@@ -101,15 +120,15 @@ export const useGameStore = create<GameState>((set, get) => ({
         rarity = res.rarity;
         attemptId = res.attempt_id;
         timeLimit = res.time_limit;
-        const candidates = state.catalog.filter((c) => c.rarity === rarity);
-        entry = candidates[Math.floor(Math.random() * candidates.length)] ?? drawFromMockCatalog();
+        const candidates = inSeason(state.catalog, state.season).filter((c) => c.rarity === rarity);
+        entry = candidates[Math.floor(Math.random() * candidates.length)] ?? drawFromMockCatalog(state.season);
       } catch {
-        entry = drawFromMockCatalog();
+        entry = drawFromMockCatalog(state.season);
         rarity = entry.rarity;
         timeLimit = RARITY_CONFIG[rarity].timeLimit;
       }
     } else {
-      entry = drawFromMockCatalog();
+      entry = drawFromMockCatalog(state.season);
       rarity = entry.rarity;
       timeLimit = RARITY_CONFIG[rarity].timeLimit;
     }
