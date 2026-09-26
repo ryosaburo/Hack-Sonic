@@ -7,6 +7,7 @@
     "credit_text": "©JAXA",
     "rarity": "common",
     "weight": 35,
+    "point": 10,
     "capture_date": "2005-11-20",
     "flavor_text": "落花生のような形をした小さな小惑星。表面には丸い岩がごろごろと転がり、重力の弱さを物語っている。"
   },
@@ -18,6 +19,7 @@
     "credit_text": "©JAXA、東大など",
     "rarity": "common",
     "weight": 35,
+    "point": 10,
     "capture_date": "2018-06-27",
     "flavor_text": "そろばんの珠のような形をした炭素質の小惑星。到着直後にその全体像が初めて明らかになった。"
   },
@@ -29,8 +31,15 @@
     "credit_text": "©ISAS/JAXA",
     "rarity": "rare",
     "weight": 10,
+    "point": 30,
     "capture_date": "2016-01-07",
-    "flavor_text": "紫外線と赤外線でとらえた金星の分厚い雲。地表とは異なる速さで大気全体が渦を巻いて流れている。"
+    "flavor_text": "紫外線と赤外線でとらえた金星の分厚い雲。地表とは異なる速さで大気全体が渦を巻いて流れている。",
+    "catch_bonus": {
+      "seasons": ["autumn"],
+      "season_multiplier": 2,
+      "area": { "x": 180, "y": -11, "radius": 35 },
+      "area_multiplier": 3
+    }
   },
   {
     "id": "moon_tc",
@@ -40,8 +49,15 @@
     "credit_text": "©国立天文台",
     "rarity": "rare",
     "weight": 10,
+    "point": 30,
     "capture_date": "2008-01-01",
-    "flavor_text": "地形カメラが撮影したクレーターだらけの月面。高度な立体視データから起伏の細部までわかる一枚。"
+    "flavor_text": "地形カメラが撮影したクレーターだらけの月面。高度な立体視データから起伏の細部までわかる一枚。",
+    "catch_bonus": {
+      "seasons": ["winter"],
+      "season_multiplier": 2,
+      "area": { "x": 260, "y": -19, "radius": 35 },
+      "area_multiplier": 3
+    }
   },
   {
     "id": "ryugu_touchdown",
@@ -51,19 +67,33 @@
     "credit_text": "©JAXA、東大など",
     "rarity": "super_rare",
     "weight": 4,
+    "point": 100,
     "capture_date": "2019-04-05",
-    "flavor_text": "人工的に作り出したクレーターの至近距離からの一枚。地下に眠っていた物質が周囲に飛び散っている。"
+    "flavor_text": "人工的に作り出したクレーターの至近距離からの一枚。地下に眠っていた物質が周囲に飛び散っている。",
+    "catch_bonus": {
+      "seasons": ["spring"],
+      "season_multiplier": 2,
+      "area": { "x": 500, "y": -15, "radius": 35 },
+      "area_multiplier": 3
+    }
   },
   {
     "id": "mercury_flyby",
     "body_name": "水星フライバイ画像",
     "mission_name": "みお(BepiColombo)",
     "image_url": "/catalog-images/mercury.jpg",
-    "credit_text": "by TheSpaceway via Pixabay",
+    "credit_text": "©NASA",
     "rarity": "super_rare",
     "weight": 4,
+    "point": 100,
     "capture_date": "2021-10-02",
-    "flavor_text": "太陽に最も近い惑星、水星のすぐそばをかすめた際に記録された一枚。無数のクレーターが刻まれている。"
+    "flavor_text": "太陽に最も近い惑星、水星のすぐそばをかすめた際に記録された一枚。無数のクレーターが刻まれている。",
+    "catch_bonus": {
+      "seasons": ["summer"],
+      "season_multiplier": 2,
+      "area": { "x": 100, "y": -18, "radius": 35 },
+      "area_multiplier": 3
+    }
   },
   {
     "id": "ikaros_selfie",
@@ -73,19 +103,33 @@
     "credit_text": "©JAXA",
     "rarity": "legendary",
     "weight": 1,
+    "point": 300,
     "capture_date": "2010-06-15",
-    "flavor_text": "本体から切り離された小さなカメラが撮影した、太陽帆を広げた自らの姿と遠くの地球。宇宙で初めての自撮りとも言われる一枚。"
+    "flavor_text": "本体から切り離された小さなカメラが撮影した、太陽帆を広げた自らの姿と遠くの地球。宇宙で初めての自撮りとも言われる一枚。",
+    "catch_bonus": {
+      "seasons": ["summer"],
+      "season_multiplier": 2,
+      "area": { "x": 900, "y": 47, "radius": 35 },
+      "area_multiplier": 3
+    }
   },
   {
-    "id": "slim_landing",
+    "id": "slim_touchdown",
     "body_name": "月面着陸の瞬間",
     "mission_name": "SLIM",
-    "image_url": "/catalog-images/slim_landing.jpg",
+    "image_url": "/catalog-images/slim_touchdown.jpg",
     "credit_text": "©JAXA、タカラトミー、ソニーグループ、同志社大学",
     "rarity": "legendary",
     "weight": 1,
+    "point": 300,
     "capture_date": "2024-01-20",
-    "flavor_text": "小型ロボットSORA-Qが着陸機のすぐそばから撮影した歴史的な一枚。ピンポイント着陸の成功を静かに物語る。"
+    "flavor_text": "小型ロボットSORA-Qが着陸機のすぐそばから撮影した歴史的な一枚。ピンポイント着陸の成功を静かに物語る。",
+    "catch_bonus": {
+      "seasons": ["winter"],
+      "season_multiplier": 2,
+      "area": { "x": 340, "y": -5, "radius": 35 },
+      "area_multiplier": 3
+    }
   },
   {
     "id": "akari_nebula",
@@ -95,7 +139,308 @@
     "credit_text": "©JAXA",
     "rarity": "legendary",
     "weight": 1,
+    "point": 300,
     "capture_date": "2006-05-15",
-    "flavor_text": "赤外線の目で見た遠くの星雲。可視光では見えない、生まれたばかりの星々の輝きが浮かび上がる。"
+    "flavor_text": "赤外線の目で見た遠くの星雲。可視光では見えない、生まれたばかりの星々の輝きが浮かび上がる。",
+    "catch_bonus": {
+      "seasons": ["spring"],
+      "season_multiplier": 2,
+      "area": { "x": -100, "y": 23, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "mars_hubble",
+    "body_name": "火星",
+    "mission_name": "ハッブル宇宙望遠鏡",
+    "image_url": "/catalog-images/mars.jpg",
+    "credit_text": "©NASA",
+    "rarity": "rare",
+    "weight": 10,
+    "point": 30,
+    "capture_date": "2003-08-26",
+    "flavor_text": "約6万年ぶりの大接近を迎えた赤い惑星。白く輝く極冠と、赤茶けた大地に広がる濃淡の模様がくっきりと見える。",
+    "catch_bonus": {
+      "seasons": ["winter"],
+      "season_multiplier": 2,
+      "area": { "x": 420, "y": -13, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "jupiter_cassini",
+    "body_name": "木星",
+    "mission_name": "カッシーニ",
+    "image_url": "/catalog-images/jupiter.jpg",
+    "credit_text": "©NASA",
+    "rarity": "rare",
+    "weight": 10,
+    "point": 30,
+    "capture_date": "2000-12-29",
+    "flavor_text": "土星へ向かう探査機が途中で立ち寄った太陽系最大の惑星。縞模様の雲の帯の中で、地球より大きな嵐・大赤斑が渦を巻く。",
+    "catch_bonus": {
+      "seasons": ["winter"],
+      "season_multiplier": 2,
+      "area": { "x": 580, "y": 34, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "saturn_backlit",
+    "body_name": "土星",
+    "mission_name": "カッシーニ",
+    "image_url": "/catalog-images/saturn.jpg",
+    "credit_text": "©NASA",
+    "rarity": "super_rare",
+    "weight": 4,
+    "point": 100,
+    "capture_date": "2013-07-19",
+    "flavor_text": "太陽を背にして輝く環をまとった土星。環の外側の暗闇には、はるか遠くの地球がほんの小さな光の点として写り込んでいる。",
+    "catch_bonus": {
+      "seasons": ["autumn"],
+      "season_multiplier": 2,
+      "area": { "x": 660, "y": 22, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "uranus_jwst",
+    "body_name": "天王星",
+    "mission_name": "ジェイムズ・ウェッブ宇宙望遠鏡",
+    "image_url": "/catalog-images/uranus.jpg",
+    "credit_text": "©NASA",
+    "rarity": "super_rare",
+    "weight": 4,
+    "point": 100,
+    "capture_date": "2023-02-06",
+    "flavor_text": "自転軸が横倒しになったまま太陽のまわりを回る氷の巨大惑星。赤外線の目で見ると、淡い環と極域の明るい雲が浮かび上がる。",
+    "catch_bonus": {
+      "seasons": ["autumn"],
+      "season_multiplier": 2,
+      "area": { "x": 740, "y": 69, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "neptune_voyager",
+    "body_name": "海王星",
+    "mission_name": "ボイジャー2号",
+    "image_url": "/catalog-images/neptune.jpg",
+    "credit_text": "©NASA",
+    "rarity": "super_rare",
+    "weight": 4,
+    "point": 100,
+    "capture_date": "1989-08-25",
+    "flavor_text": "太陽系のいちばん外側を回る青い惑星。これまでに唯一そばを訪れた探査機が、大暗斑と呼ばれる巨大な嵐をとらえた。",
+    "catch_bonus": {
+      "seasons": ["autumn"],
+      "season_multiplier": 2,
+      "area": { "x": 820, "y": -36, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "constellation_leo",
+    "body_name": "しし座",
+    "mission_name": "春の星座",
+    "image_url": "/catalog-images/constellation_leo.jpg",
+    "credit_text": "©NOIRLab",
+    "rarity": "legendary",
+    "weight": 1,
+    "point": 300,
+    "capture_date": "2026-04-15",
+    "flavor_text": "春の宵に高く昇る獅子の姿。胸に輝く一等星レグルスと、「？」を裏返したような頭の星の並びが目印。",
+    "seasons": ["spring"],
+    "catch_bonus": {
+      "area": { "x": -180, "y": 75, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "constellation_virgo",
+    "body_name": "おとめ座",
+    "mission_name": "春の星座",
+    "image_url": "/catalog-images/constellation_virgo.jpg",
+    "credit_text": "©NOIRLab",
+    "rarity": "legendary",
+    "weight": 1,
+    "point": 300,
+    "capture_date": "2026-04-15",
+    "flavor_text": "真珠のように白く輝く一等星スピカを抱く、全天で二番目に大きな星座。その奥には数えきれないほどの銀河が群れ集まっている。",
+    "seasons": ["spring"],
+    "catch_bonus": {
+      "area": { "x": -260, "y": -16, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "constellation_bootes",
+    "body_name": "うしかい座",
+    "mission_name": "春の星座",
+    "image_url": "/catalog-images/constellation_bootes.jpg",
+    "credit_text": "©NOIRLab",
+    "rarity": "legendary",
+    "weight": 1,
+    "point": 300,
+    "capture_date": "2026-04-15",
+    "flavor_text": "北斗七星の柄のカーブをのばした先で、オレンジ色の一等星アークトゥルスが輝く。春の大曲線をたどると出会える星座。",
+    "seasons": ["spring"],
+    "catch_bonus": {
+      "area": { "x": -340, "y": 55, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "constellation_lyra",
+    "body_name": "こと座",
+    "mission_name": "夏の星座",
+    "image_url": "/catalog-images/constellation_lyra.jpg",
+    "credit_text": "©NOIRLab",
+    "rarity": "legendary",
+    "weight": 1,
+    "point": 300,
+    "capture_date": "2026-07-15",
+    "flavor_text": "七夕の織姫星ベガを抱く小さな星座。天の川の岸辺で、夏の大三角のひとつとして青白く輝いている。",
+    "seasons": ["summer"],
+    "catch_bonus": {
+      "area": { "x": -420, "y": 43, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "constellation_cygnus",
+    "body_name": "はくちょう座",
+    "mission_name": "夏の星座",
+    "image_url": "/catalog-images/constellation_cygnus.jpg",
+    "credit_text": "©NOIRLab",
+    "rarity": "legendary",
+    "weight": 1,
+    "point": 300,
+    "capture_date": "2026-07-15",
+    "flavor_text": "天の川の流れに沿って大きな十字を描く白鳥。尾の位置に輝く一等星デネブは、夏の大三角のひとつ。",
+    "seasons": ["summer"],
+    "catch_bonus": {
+      "area": { "x": -500, "y": 2, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "constellation_aquila",
+    "body_name": "わし座",
+    "mission_name": "夏の星座",
+    "image_url": "/catalog-images/constellation_aquila.jpg",
+    "credit_text": "©NOIRLab",
+    "rarity": "legendary",
+    "weight": 1,
+    "point": 300,
+    "capture_date": "2026-07-15",
+    "flavor_text": "天の川をはさんで織姫星と向かい合う彦星アルタイル。両脇に小さな星を従え、翼を広げた鷲の姿を描く。",
+    "seasons": ["summer"],
+    "catch_bonus": {
+      "area": { "x": -580, "y": -15, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "constellation_cassiopeia",
+    "body_name": "カシオペヤ座",
+    "mission_name": "秋の星座",
+    "image_url": "/catalog-images/constellation_cassiopeia.jpg",
+    "credit_text": "©NOIRLab",
+    "rarity": "legendary",
+    "weight": 1,
+    "point": 300,
+    "capture_date": "2026-10-15",
+    "flavor_text": "秋の宵、北の空高く天の川の中にWの字を描く五つの星。北極星を探す手がかりにもなる。",
+    "seasons": ["autumn"],
+    "catch_bonus": {
+      "area": { "x": -660, "y": -37, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "constellation_andromeda",
+    "body_name": "アンドロメダ座",
+    "mission_name": "秋の星座",
+    "image_url": "/catalog-images/constellation_andromeda.jpg",
+    "credit_text": "©NOIRLab",
+    "rarity": "legendary",
+    "weight": 1,
+    "point": 300,
+    "capture_date": "2026-10-15",
+    "flavor_text": "秋の四辺形の角から連なる星の列。そのそばには、肉眼で見える最も遠い天体のひとつ、アンドロメダ銀河がぼんやりと浮かぶ。",
+    "seasons": ["autumn"],
+    "catch_bonus": {
+      "area": { "x": -740, "y": -70, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "constellation_pegasus",
+    "body_name": "ペガスス座",
+    "mission_name": "秋の星座",
+    "image_url": "/catalog-images/constellation_pegasus.jpg",
+    "credit_text": "©NOIRLab",
+    "rarity": "legendary",
+    "weight": 1,
+    "point": 300,
+    "capture_date": "2026-10-15",
+    "flavor_text": "秋の夜空に浮かぶ大きな四角形「秋の四辺形」が目印。天をかける天馬の胴体にあたる。",
+    "seasons": ["autumn"],
+    "catch_bonus": {
+      "area": { "x": -820, "y": 35, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "constellation_taurus",
+    "body_name": "おうし座",
+    "mission_name": "冬の星座",
+    "image_url": "/catalog-images/constellation_taurus.jpg",
+    "credit_text": "©NOIRLab",
+    "rarity": "legendary",
+    "weight": 1,
+    "point": 300,
+    "capture_date": "2027-01-15",
+    "flavor_text": "赤い一等星アルデバランと、青白い星々が寄り添う散開星団すばる（プレアデス星団）を抱く星座。",
+    "seasons": ["winter"],
+    "catch_bonus": {
+      "area": { "x": -900, "y": -16, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "constellation_orion",
+    "body_name": "オリオン座",
+    "mission_name": "冬の星座",
+    "image_url": "/catalog-images/constellation_orion.jpg",
+    "credit_text": "©NOIRLab",
+    "rarity": "legendary",
+    "weight": 1,
+    "point": 300,
+    "capture_date": "2027-01-15",
+    "flavor_text": "赤いベテルギウスと青白いリゲル、二つの一等星を持つ冬の王者。三つ星の下では、星が生まれるオリオン大星雲が淡く光る。",
+    "seasons": ["winter"],
+    "catch_bonus": {
+      "area": { "x": -980, "y": 56, "radius": 35 },
+      "area_multiplier": 3
+    }
+  },
+  {
+    "id": "constellation_canis_major",
+    "body_name": "おおいぬ座",
+    "mission_name": "冬の星座",
+    "image_url": "/catalog-images/constellation_canis_major.jpg",
+    "credit_text": "©NOIRLab",
+    "rarity": "legendary",
+    "weight": 1,
+    "point": 300,
+    "capture_date": "2027-01-15",
+    "flavor_text": "全天で最も明るい恒星シリウスが輝く星座。冬の大三角の一角を担い、冷たい空気の中で強くまたたく。",
+    "seasons": ["winter"],
+    "catch_bonus": {
+      "area": { "x": -1060, "y": -34, "radius": 35 },
+      "area_multiplier": 3
+    }
   }
 ]
