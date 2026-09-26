@@ -36,6 +36,13 @@ def _add_missing_columns():
     if "seasons" not in columns:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE catalog ADD COLUMN seasons JSON"))
+    if "point" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE catalog ADD COLUMN point INTEGER NOT NULL DEFAULT 0"))
+    wallet_columns = {c["name"] for c in inspect(engine).get_columns("wallet")}
+    if "test_grant_applied" not in wallet_columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE wallet ADD COLUMN test_grant_applied BOOLEAN NOT NULL DEFAULT FALSE"))
 
 
 # catalog.json を正として図鑑テーブルを揃える。初回は全件投入し、既存DBでも
@@ -47,9 +54,14 @@ def sync_catalog_from_seed():
     with Session(engine) as session:
         _remove_retired_entries(session)
         for item in raw:
-            # point / catch_bonus などフロント用の項目はテーブルに列がないので同期しない
+            # 値の決定はカタログ担当。未設定は報酬0で互換性を保つ。
+            point = item.get("point", 0)
+            if type(point) is not int or point < 0:
+                raise ValueError(f"Invalid point for catalog entry: {item['id']}")
+            # catch_bonus などフロント用の項目はテーブルに列がないので同期しない
             fields = {key: item.get(key) for key in CatalogEntry.model_fields}
             fields["capture_date"] = date.fromisoformat(item["capture_date"])
+            fields["point"] = point
             entry = session.get(CatalogEntry, item["id"])
             if entry is None:
                 session.add(CatalogEntry(**fields))

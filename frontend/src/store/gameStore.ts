@@ -1,165 +1,109 @@
 import { create } from 'zustand';
-import type { CatalogEntry, CollectionRecord, GamePhase, Rarity, ReelPhaseMode } from '../types';
+import type { CatalogEntry, CollectionRecord, GamePhase, ReelPhaseMode } from '../types';
 import { RARITY_CONFIG } from '../types';
 import * as api from '../api/client';
 import catalogMock from '../data/catalog.mock.json';
 import { seasonOf, type Season } from '../engine/seasons';
+import { drawMock, EMPTY_ECONOMY, MOCK_PRODUCTS, mockEconomy, type Economy, type Product } from '../engine/economy';
 
-function randomBetween(min: number, max: number) {
-  return min + Math.random() * (max - min);
+const MOCK_KEY = 'space-fishing:mock-progress:v1';
+const PENDING_KEY = 'space-fishing:pending:v1';
+const configuredMockTestPoints = Number(import.meta.env.VITE_TEST_POINTS ?? 0);
+const mockTestPoints = Number.isInteger(configuredMockTestPoints) && configuredMockTestPoints >= 0 && configuredMockTestPoints <= 1_000_000
+  ? configuredMockTestPoints : 0;
+const mockCatalog = catalogMock.map(entry => ({ ...entry, point: (entry as Partial<CatalogEntry>).point ?? 0 })) as CatalogEntry[];
+function readSaved<T>(key: string): T | null {
+  try { return JSON.parse(localStorage.getItem(key) ?? 'null') as T | null; } catch { return null; }
 }
+function save(key: string, value: unknown) { localStorage.setItem(key, JSON.stringify(value)); }
+function randomBetween(min: number, max: number) { return min + Math.random() * (max - min); }
+type Context = { currentEntry: CatalogEntry | null; isNewSpecies: boolean; catchCount: number; earnedPoints: number };
+type PendingAction = (
+  | { kind: 'start'; body: api.CastStartBody }
+  | { kind: 'resolve'; body: api.CastResolveRequest }
+  | { kind: 'decision'; body: { attempt_id: string; decision: 'keep' | 'release' } }
+  | { kind: 'exchange'; body: { request_id: string; product_id: string } }
+) & { context: Context };
 
-function isInSeason(entry: CatalogEntry, season: Season): boolean {
-  return !entry.seasons || entry.seasons.includes(season);
-}
-
-// 今の季節に釣れるものだけに絞る（該当なしのときは絞らない）
-function inSeason(catalog: CatalogEntry[], season: Season): CatalogEntry[] {
-  const filtered = catalog.filter((c) => isInSeason(c, season));
-  return filtered.length > 0 ? filtered : catalog;
-}
-
-// バックエンド未接続時のフォールバック抽選（担当Aがバックエンド完成前に演出を作り込めるように）。
-function drawFromMockCatalog(season: Season): CatalogEntry {
-  const catalog = inSeason(catalogMock as CatalogEntry[], season);
-  const totalWeight = catalog.reduce((sum, c) => sum + c.weight, 0);
-  let r = Math.random() * totalWeight;
-  for (const entry of catalog) {
-    r -= entry.weight;
-    if (r <= 0) return entry;
-  }
-  return catalog[0];
-}
-
-interface GameState {
-  phase: GamePhase;
-  usingBackend: boolean;
-  catalog: CatalogEntry[];
-  collection: Record<string, CollectionRecord>;
-  season: Season;
-
-  attemptId: string | null;
-  currentEntry: CatalogEntry | null;
-
-  gauge: number;
-  timeLeft: number;
-  reelPhaseMode: ReelPhaseMode;
-  phaseTimer: number;
-  phaseTelegraph: boolean;
-  isHolding: boolean;
-  tapPulse: number; // 連打が起きたフレームで演出用にインクリメントする値
-
+interface GameState extends Context {
+  phase: GamePhase; usingBackend: boolean; ready: boolean; loading: boolean; busy: boolean; error: string | null;
+  catalog: CatalogEntry[]; collection: Record<string, CollectionRecord>; season: Season;
+  economy: Economy; products: Product[]; useLure: boolean; pending: PendingAction | null;
+  attemptId: string | null; gauge: number; timeLeft: number; timeLimit: number; damageMultiplier: number;
+  reelPhaseMode: ReelPhaseMode; phaseTimer: number; phaseTelegraph: boolean; isHolding: boolean; tapPulse: number;
   lastResultSuccess: boolean | null;
-  isNewSpecies: boolean;
-  catchCount: number;
-
-  loadCatalog: () => Promise<void>;
-  setSeason: (season: Season) => void;
-  startCast: () => Promise<void>;
-  triggerBite: () => void;
-  pressStart: () => void;
-  pressEnd: () => void;
-  tickReel: (dt: number) => void;
-  keepGyotaku: () => void;
-  releaseCatch: () => void;
-  returnToIdle: () => void;
-  openZukan: () => void;
-  closeZukan: () => void;
+  loadCatalog: () => Promise<void>; setSeason: (season: Season) => void;
+  startCast: (x?: number, y?: number) => Promise<void>;
+  triggerBite: () => void; pressStart: () => void; pressEnd: () => void; tickReel: (dt: number) => void;
+  keepGyotaku: () => void; releaseCatch: () => void; returnToIdle: () => void;
+  openZukan: () => void; closeZukan: () => void; openShop: () => void; closeShop: () => void;
+  setUseLure: (use: boolean) => void; buy: (id: string) => Promise<void>;
+  retryPending: () => Promise<void>; dismissError: () => void;
+  _run: (pending: PendingAction) => Promise<void>;
   _resolve: (success: boolean) => Promise<void>;
+  _begin: (entry: CatalogEntry, timeLimit: number, damage: number, attemptId: string | null) => void;
 }
 
+const contextOf = (s: Context): Context => ({ currentEntry: s.currentEntry, isNewSpecies: s.isNewSpecies, catchCount: s.catchCount, earnedPoints: s.earnedPoints });
 export const useGameStore = create<GameState>((set, get) => ({
-  phase: 'idle',
-  usingBackend: false,
-  catalog: catalogMock as CatalogEntry[],
-  collection: {},
-  season: seasonOf(new Date()),
-
-  attemptId: null,
-  currentEntry: null,
-
-  gauge: 100,
-  timeLeft: 0,
-  reelPhaseMode: 'tap',
-  phaseTimer: 0,
-  phaseTelegraph: false,
-  isHolding: false,
-  tapPulse: 0,
-
-  lastResultSuccess: null,
-  isNewSpecies: false,
-  catchCount: 0,
+  phase: 'idle', usingBackend: false, ready: false, loading: false, busy: false, error: null,
+  catalog: mockCatalog, collection: {}, season: seasonOf(new Date()),
+  economy: EMPTY_ECONOMY, products: MOCK_PRODUCTS, useLure: false, pending: null,
+  attemptId: null, currentEntry: null, gauge: 100, timeLeft: 0, timeLimit: 0, damageMultiplier: 1,
+  reelPhaseMode: 'tap', phaseTimer: 0, phaseTelegraph: false, isHolding: false, tapPulse: 0,
+  lastResultSuccess: null, isNewSpecies: false, catchCount: 0, earnedPoints: 0,
 
   loadCatalog: async () => {
+    // StrictModeなどで初期化が重なっても、遅い応答で購入後の状態を上書きしない。
+    if (get().ready || get().loading) return;
+    set({ loading: true });
+    const pending = readSaved<PendingAction>(PENDING_KEY);
     try {
-      const [catalog, collectionList] = await Promise.all([api.fetchCatalog(), api.fetchCollection()]);
-      const collection: Record<string, CollectionRecord> = {};
-      for (const c of collectionList) collection[c.species_id] = c;
-      set({ catalog, collection, usingBackend: true });
+      const [catalog, records, economy, products] = await Promise.all([api.fetchCatalog(), api.fetchCollection(), api.fetchEconomy(), api.fetchProducts()]);
+      set({ catalog, collection: Object.fromEntries(records.map(c => [c.species_id, c])), economy, products, usingBackend: true, ready: true });
     } catch {
-      // バックエンド未起動時はモックカタログのみで進行する。
-      set({ usingBackend: false });
-    }
-  },
-
-  setSeason: (season: Season) => {
-    if (get().phase !== 'idle') return;
-    set({ season });
-  },
-
-  startCast: async () => {
-    const state = get();
-    let rarity: Rarity;
-    let attemptId: string | null = null;
-    let timeLimit: number;
-    let entry: CatalogEntry;
-
-    if (state.usingBackend) {
-      try {
-        const res = await api.castStart(state.season);
-        rarity = res.rarity;
-        attemptId = res.attempt_id;
-        timeLimit = res.time_limit;
-        const candidates = inSeason(state.catalog, state.season).filter((c) => c.rarity === rarity);
-        entry = candidates[Math.floor(Math.random() * candidates.length)] ?? drawFromMockCatalog(state.season);
-      } catch {
-        entry = drawFromMockCatalog(state.season);
-        rarity = entry.rarity;
-        timeLimit = RARITY_CONFIG[rarity].timeLimit;
+      if (!pending) {
+        const saved = readSaved<{ economy: Economy; collection: Record<string, CollectionRecord>; testGrantApplied?: boolean }>(MOCK_KEY);
+        const collection = saved?.collection ?? {};
+        let economy = saved?.economy ?? EMPTY_ECONOMY;
+        if (mockTestPoints > 0 && !saved?.testGrantApplied) {
+          economy = mockEconomy(economy.balance + mockTestPoints, economy.inventory);
+          save(MOCK_KEY, { economy, collection, testGrantApplied: true });
+        }
+        set({ usingBackend: false, ready: true, economy, collection, catalog: mockCatalog, products: MOCK_PRODUCTS });
       }
-    } else {
-      entry = drawFromMockCatalog(state.season);
-      rarity = entry.rarity;
-      timeLimit = RARITY_CONFIG[rarity].timeLimit;
     }
+    if (pending) set({ ...pending.context, pending, phase: 'pending', usingBackend: true, ready: true, error: '未確認の操作があります。同じ操作の結果を確認してください。' });
+    set({ loading: false });
+  },
+  setSeason: season => { if (get().phase === 'idle' && !get().busy) set({ season }); },
+  setUseLure: useLure => { if (get().phase === 'idle' && !get().busy) set({ useLure }); },
 
-    set({
-      phase: 'cast',
-      currentEntry: entry,
-      attemptId,
-      gauge: 100,
-      timeLeft: timeLimit,
-      reelPhaseMode: 'tap',
-      phaseTelegraph: false,
-      isHolding: false,
-      lastResultSuccess: null,
-    });
-
-    const config = RARITY_CONFIG[rarity];
-    set({ phaseTimer: randomBetween(config.phaseSwitchMin, config.phaseSwitchMax) });
-
-    // キャスト→アタリ待ちの間（飛距離演出の分の“間”）
+  _begin: (entry, timeLimit, damageMultiplier, attemptId) => {
+    const config = RARITY_CONFIG[entry.rarity];
+    set({ phase: 'cast', currentEntry: entry, attemptId, gauge: 100, timeLeft: timeLimit, timeLimit, damageMultiplier,
+      reelPhaseMode: 'tap', phaseTelegraph: false, isHolding: false, lastResultSuccess: null,
+      isNewSpecies: false, earnedPoints: 0, useLure: false, phaseTimer: randomBetween(config.phaseSwitchMin, config.phaseSwitchMax) });
     window.setTimeout(() => {
-      if (get().phase === 'cast') {
-        set({ phase: 'waiting_bite' });
-        const biteDelay = randomBetween(800, 2200);
-        window.setTimeout(() => {
-          if (get().phase === 'waiting_bite') get().triggerBite();
-        }, biteDelay);
-      }
+      if (get().phase !== 'cast') return;
+      set({ phase: 'waiting_bite' });
+      window.setTimeout(() => { if (get().phase === 'waiting_bite') get().triggerBite(); }, randomBetween(800, 2200));
     }, 600);
   },
-
+  startCast: async (x = 0, y = 0) => {
+    const s = get();
+    if (!s.ready || s.busy || s.phase !== 'idle') return;
+    if (s.useLure && !s.economy.inventory.lure) { set({ error: '誘引ルアーを交換してください。' }); return; }
+    if (s.usingBackend) {
+      await get()._run({ kind: 'start', body: { request_id: crypto.randomUUID(), season: s.season, x, y, use_lure: s.useLure }, context: contextOf(s) });
+    } else {
+      const entry = drawMock(s.catalog, s.season, x, y, s.useLure);
+      const inventory = { ...s.economy.inventory };
+      if (s.useLure) inventory.lure--;
+      set({ economy: mockEconomy(s.economy.balance, inventory), error: null });
+      get()._begin(entry, RARITY_CONFIG[entry.rarity].timeLimit + (inventory.time_extension ? MOCK_PRODUCTS.find(p => p.id === 'time_extension')!.extra_seconds! : 0), inventory.power_reel ? MOCK_PRODUCTS.find(p => p.id === 'power_reel')!.damage_multiplier! : 1, null);
+    }
+  },
   triggerBite: () => {
     if (get().phase !== 'waiting_bite') return;
     set({ phase: 'reeling' });
@@ -172,7 +116,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (state.reelPhaseMode === 'tap') {
       const rarity = state.currentEntry?.rarity ?? 'common';
       const config = RARITY_CONFIG[rarity];
-      set((s) => ({ gauge: Math.max(0, s.gauge - config.tapDecrease), tapPulse: s.tapPulse + 1 }));
+      set((s) => ({ gauge: Math.max(0, s.gauge - config.tapDecrease * state.damageMultiplier), tapPulse: s.tapPulse + 1 }));
     }
   },
 
@@ -183,12 +127,14 @@ export const useGameStore = create<GameState>((set, get) => ({
   tickReel: (dt: number) => {
     const state = get();
     if (state.phase !== 'reeling' || !state.currentEntry) return;
+    // 連打で0になった直後に自然回復させず、成功を確定する。
+    if (state.gauge <= 0) { void get()._resolve(true); return; }
     const rarity = state.currentEntry.rarity;
     const config = RARITY_CONFIG[rarity];
 
     let gauge = state.gauge;
     if (state.reelPhaseMode === 'hold' && state.isHolding) {
-      gauge -= config.holdDecreasePerSec * dt;
+      gauge -= config.holdDecreasePerSec * state.damageMultiplier * dt;
     } else {
       gauge += config.recoverPerSec * dt;
     }
@@ -215,56 +161,97 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
   },
 
-  // 内部専用（結果確定）
-  _resolve: async (success: boolean) => {
-    const state = get();
-    set({ phase: 'result', lastResultSuccess: success });
-    if (!success || !state.currentEntry) return;
-
-    const existing = state.collection[state.currentEntry.id];
-    if (state.usingBackend && state.attemptId) {
-      try {
-        const res = await api.castResolve({ attempt_id: state.attemptId, success: true });
-        set({
-          isNewSpecies: res.is_new_species,
-          catchCount: res.catch_count,
-          // サーバー側の抽選結果を正とする（天体の最終確定は常にresolve側）
-          currentEntry: res.entry ?? state.currentEntry,
-        });
-        return;
-      } catch {
-        // フォールバックへ
-      }
+  _resolve: async success => {
+    const s = get();
+    if (s.phase !== 'reeling' || !s.currentEntry) return;
+    if (s.usingBackend && s.attemptId) {
+      await get()._run({ kind: 'resolve', body: { attempt_id: s.attemptId, success }, context: contextOf(s) });
+      return;
     }
-    set({ isNewSpecies: !existing, catchCount: (existing?.catch_count ?? 0) + 1 });
+    const existing = s.collection[s.currentEntry.id];
+    const points = success && existing ? s.currentEntry.point : 0;
+    set({ phase: 'result', lastResultSuccess: success, isNewSpecies: success && !existing,
+      catchCount: success ? (existing?.catch_count ?? 0) + 1 : 0, earnedPoints: points,
+      economy: mockEconomy(s.economy.balance + points, s.economy.inventory),
+      collection: success && existing ? { ...s.collection, [s.currentEntry.id]: { ...existing, catch_count: existing.catch_count + 1 } } : s.collection });
   },
-
   keepGyotaku: () => {
-    const state = get();
-    if (!state.currentEntry) return;
-    const now = new Date().toISOString();
-    const existing = state.collection[state.currentEntry.id];
-    set({
-      phase: 'gyotaku',
-      collection: {
-        ...state.collection,
-        [state.currentEntry.id]: existing ?? {
-          species_id: state.currentEntry.id,
-          first_caught_at: now,
-          catch_count: state.catchCount || 1,
-        },
-      },
-    });
+    const s = get();
+    if (s.phase !== 'result' || s.busy || !s.isNewSpecies || !s.currentEntry) return;
+    if (s.usingBackend && s.attemptId) {
+      void get()._run({ kind: 'decision', body: { attempt_id: s.attemptId, decision: 'keep' }, context: contextOf(s) });
+    } else {
+      set({ phase: 'gyotaku', collection: { ...s.collection, [s.currentEntry.id]: { species_id: s.currentEntry.id, first_caught_at: new Date().toISOString(), catch_count: 1 } } });
+    }
   },
-
   releaseCatch: () => {
-    set({ phase: 'idle', currentEntry: null, attemptId: null });
+    const s = get();
+    if (s.phase !== 'result' || s.busy) return;
+    if (s.usingBackend && s.attemptId && s.isNewSpecies) {
+      void get()._run({ kind: 'decision', body: { attempt_id: s.attemptId, decision: 'release' }, context: contextOf(s) });
+    } else get().returnToIdle();
   },
-
-  returnToIdle: () => {
-    set({ phase: 'idle', currentEntry: null, attemptId: null });
-  },
-
-  openZukan: () => set({ phase: 'zukan' }),
+  returnToIdle: () => { if (!get().pending) set({ phase: 'idle', currentEntry: null, attemptId: null, error: null }); },
+  openZukan: () => { if (get().phase === 'idle' && !get().busy) set({ phase: 'zukan' }); },
   closeZukan: () => set({ phase: 'idle' }),
+  openShop: () => { if (get().phase === 'idle' && get().ready && !get().busy) set({ phase: 'shop', error: null }); },
+  closeShop: () => { if (!get().busy && !get().pending) set({ phase: 'idle', error: null }); },
+  dismissError: () => { if (!get().pending) set({ error: null }); },
+  buy: async id => {
+    const s = get();
+    if (s.phase !== 'shop' || s.busy || s.pending) return;
+    if (s.usingBackend) {
+      await get()._run({ kind: 'exchange', body: { request_id: crypto.randomUUID(), product_id: id }, context: contextOf(s) });
+      return;
+    }
+    const product = s.products.find(p => p.id === id);
+    if (!product || s.economy.balance < product.price || (product.kind !== 'consumable' && s.economy.inventory[id])) return;
+    set({ economy: mockEconomy(s.economy.balance - product.price, { ...s.economy.inventory, [id]: (s.economy.inventory[id] ?? 0) + 1 }) });
+  },
+  retryPending: async () => { const s = get(); if (s.pending && !s.busy) await get()._run(s.pending); },
+  _run: async pending => {
+    if (get().busy) return;
+    // リクエストIDを送信前に保存し、再読込後も同じ操作を再送する。
+    save(PENDING_KEY, pending);
+    set({ pending, busy: true, error: null, phase: 'pending' });
+    try {
+      if (pending.kind === 'start') {
+        const res = await api.castStart(pending.body);
+        const economy = await api.fetchEconomy();
+        const entry = get().catalog.find(c => c.rarity === res.rarity);
+        if (!entry) throw new Error('カタログを再読込してください。');
+        set({ economy });
+        get()._begin(entry, res.time_limit, res.damage_multiplier, res.attempt_id);
+      } else if (pending.kind === 'resolve') {
+        const res = await api.castResolve(pending.body);
+        const [records, economy] = await Promise.all([api.fetchCollection(), api.fetchEconomy()]);
+        set({ phase: 'result', attemptId: pending.body.attempt_id, currentEntry: res.entry ?? pending.context.currentEntry,
+          lastResultSuccess: res.success, isNewSpecies: res.is_new_species, catchCount: res.catch_count,
+          earnedPoints: res.earned_points, economy, collection: Object.fromEntries(records.map(c => [c.species_id, c])) });
+      } else if (pending.kind === 'decision') {
+        await api.castDecision(pending.body);
+        const records = await api.fetchCollection();
+        set({ ...pending.context, phase: pending.body.decision === 'keep' ? 'gyotaku' : 'idle', collection: Object.fromEntries(records.map(c => [c.species_id, c])) });
+      } else {
+        await api.exchange(pending.body);
+        set({ economy: await api.fetchEconomy(), phase: 'shop' });
+      }
+      save(PENDING_KEY, null);
+      set({ pending: null, busy: false });
+    } catch (error) {
+      // 明確に拒否された操作は終了。通信断・5xxでは結果が不明なので同じIDで再確認する。
+      if (error instanceof api.ApiError && error.status >= 400 && error.status < 500) {
+        save(PENDING_KEY, null);
+        set({ pending: null, busy: false, phase: pending.kind === 'exchange' ? 'shop' : 'idle', error: '操作を受け付けられませんでした。残高・所持品・試行の有効期限を確認してください。' });
+        try { set({ economy: await api.fetchEconomy() }); } catch { /* 次回操作時に再確認する */ }
+      } else set({ busy: false, error: '通信結果を確認できません。同じ操作の結果を再確認してください。' });
+    }
+  },
 }));
+
+useGameStore.subscribe((s, before) => {
+  if (s.ready && !s.usingBackend && (s.economy !== before.economy || s.collection !== before.collection)) {
+    const previous = readSaved<{ testGrantApplied?: boolean }>(MOCK_KEY);
+    save(MOCK_KEY, { economy: s.economy, collection: s.collection, testGrantApplied: previous?.testGrantApplied ?? false });
+  }
+});
