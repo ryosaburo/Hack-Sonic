@@ -41,7 +41,10 @@ export function ExchangeShop() {
             const soldOut = owned >= limit;
             const insufficient = economy.balance < product.price;
             return <li className={`shop-product ${soldOut ? 'owned' : ''}`} key={product.id}>
-              <span className="shop-no zk-num">No.{String(i + 1).padStart(2, '0')}</span>
+              <div className="shop-index">
+                <span className="shop-no zk-num">No.{String(i + 1).padStart(2, '0')}</span>
+                {product.image_url && <span className="shop-plate"><img src={product.image_url} alt="" className="shop-image" /></span>}
+              </div>
               <div className="shop-body">
                 <h4 className="shop-name">{product.name}</h4>
                 <span className="shop-kind">{KIND_LABEL[product.kind] ?? product.kind}</span>
