@@ -5,7 +5,7 @@ import './ExchangeShop.css';
 
 const KIND_LABEL: Record<string, string> = {
   consumable: '消耗品・1投分',
-  permanent: '永久装備・手動切替',
+  permanent: '永久装備・釣り画面で切替',
   information: '釣り場情報・永続',
 };
 
@@ -14,7 +14,6 @@ export function ExchangeShop() {
   const economy = useGameStore(s => s.economy);
   const products = useGameStore(s => s.products);
   const buy = useGameStore(s => s.buy);
-  const setEquipment = useGameStore(s => s.setEquipment);
   const error = useGameStore(s => s.error);
   const dismissError = useGameStore(s => s.dismissError);
   const closeShop = useGameStore(s => s.closeShop);
@@ -39,8 +38,6 @@ export function ExchangeShop() {
             const owned = economy.inventory[product.id] ?? 0;
             const permanentOwned = product.kind !== 'consumable' && owned > 0;
             const insufficient = economy.balance < product.price;
-            const gearId = product.id === 'time_extension' || product.id === 'power_reel' ? product.id : null;
-            const equipped = gearId ? Boolean(economy.equipped?.[gearId]) : false;
             return <li className={`shop-product ${permanentOwned ? 'owned' : ''}`} key={product.id}>
               <span className="shop-no zk-num">No.{String(i + 1).padStart(2, '0')}</span>
               <div className="shop-body">
@@ -54,13 +51,6 @@ export function ExchangeShop() {
                 <button className="primary-btn" disabled={permanentOwned || insufficient} onClick={() => void buy(product.id)}>
                   {permanentOwned ? '購入済み' : insufficient ? 'ポイント不足' : '交換する'}
                 </button>
-                {gearId && owned > 0 && <button
-                  className="shop-equip-btn"
-                  type="button"
-                  aria-label={`${product.name}を${equipped ? '外す' : '装備する'}`}
-                  aria-pressed={equipped}
-                  onClick={() => void setEquipment(gearId, !equipped)}
-                >{equipped ? '装備中 · 外す' : '装備する'}</button>}
               </div>
             </li>;
           })}
@@ -85,9 +75,10 @@ export function EconomyHud() {
     <button className="secondary-btn" disabled={!s.ready || s.busy} onClick={s.openShop}>交換所 · {s.economy.balance} pt</button>
     <label><input type="checkbox" checked={s.useLure} disabled={!s.ready || s.busy || !s.economy.inventory.lure} onChange={e => s.setUseLure(e.target.checked)} />
       誘引ルアーを使う（{s.economy.inventory.lure ?? 0}個）</label>
-    {(s.economy.inventory.time_extension > 0 || s.economy.inventory.power_reel > 0) && <small>
-      装備中：{[s.economy.equipped?.time_extension && '星時計', s.economy.equipped?.power_reel && '強化リール'].filter(Boolean).join('・') || 'なし'}（交換所で切替）
-    </small>}
+    <label><input type="checkbox" checked={Boolean(s.economy.equipped?.time_extension)} disabled={!s.ready || s.busy || !s.economy.inventory.time_extension} onChange={e => void s.setEquipment('time_extension', e.target.checked)} />
+      星時計を装備{!s.economy.inventory.time_extension && '（未所持）'}</label>
+    <label><input type="checkbox" checked={Boolean(s.economy.equipped?.power_reel)} disabled={!s.ready || s.busy || !s.economy.inventory.power_reel} onChange={e => void s.setEquipment('power_reel', e.target.checked)} />
+      強化リールを装備{!s.economy.inventory.power_reel && '（未所持）'}</label>
   </div>;
 }
 

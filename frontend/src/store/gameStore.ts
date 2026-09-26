@@ -217,7 +217,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
   setEquipment: async (id, equipped) => {
     const s = get();
-    if (s.phase !== 'shop' || s.busy || s.pending || !s.economy.inventory[id]) return;
+    if (s.phase !== 'idle' || s.busy || s.pending || !s.economy.inventory[id]) return;
     if (s.usingBackend) {
       await get()._run({ kind: 'equipment', body: { product_id: id, equipped }, context: contextOf(s) });
     } else {
@@ -267,7 +267,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         set({ economy: res.economy, areas: res.areas, phase: 'zukan' });
       } else if (pending.kind === 'equipment') {
         await api.setEquipment(pending.body);
-        set({ economy: await api.fetchEconomy(), phase: 'shop' });
+        set({ economy: await api.fetchEconomy(), phase: 'idle' });
       } else {
         await api.exchange(pending.body);
         set({ economy: await api.fetchEconomy(), phase: 'shop' });
@@ -278,7 +278,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       // 明確に拒否された操作は終了。通信断・5xxでは結果が不明なので同じIDで再確認する。
       if (error instanceof api.ApiError && error.status >= 400 && error.status < 500) {
         save(PENDING_KEY, null);
-        set({ pending: null, busy: false, phase: pending.kind === 'exchange' || pending.kind === 'equipment' ? 'shop' : pending.kind === 'reveal' ? 'zukan' : 'idle', error: '操作を受け付けられませんでした。残高・所持品・試行の有効期限を確認してください。' });
+        set({ pending: null, busy: false, phase: pending.kind === 'exchange' ? 'shop' : pending.kind === 'reveal' ? 'zukan' : 'idle', error: '操作を受け付けられませんでした。残高・所持品・試行の有効期限を確認してください。' });
         try { set({ economy: await api.fetchEconomy() }); } catch { /* 次回操作時に再確認する */ }
       } else set({ busy: false, error: '通信結果を確認できません。同じ操作の結果を再確認してください。' });
     }
