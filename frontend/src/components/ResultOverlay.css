@@ -1,10 +1,12 @@
+/* 釣果の結果（と、各画面で共有するオーバーレイ・ボタン）。図鑑・交換所と同じ観測台帳風。
+   色はすべて styles/observatory.css のトークンから取る */
 .overlay-backdrop {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(2, 3, 10, 0.72);
+  background: rgb(5 7 12 / 0.8);
   z-index: 10;
   animation: fade-in 0.2s ease;
 }
@@ -18,84 +20,151 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.8rem;
-  padding: 2rem 2.4rem;
-  border-radius: 20px;
-  background: radial-gradient(circle at 30% 20%, #171a2e, #0a0b16);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  min-width: 260px;
+  gap: 0.75rem;
+  width: min(92%, 320px);
+  padding: 1.5rem 1.4rem 1.4rem;
+  border: 1px solid var(--zk-rule-strong);
+  border-radius: 2px;
+  background: var(--zk-bg);
+  color: var(--zk-ink);
   text-align: center;
+  animation: zk-enter 0.2s ease-out;
 }
 
 .result-card.fail {
-  border-color: rgba(255, 120, 120, 0.4);
+  border-color: var(--zk-alert);
 }
 
 .result-heading {
+  margin: 0;
+  font-family: var(--zk-font-serif);
   font-size: 1.3rem;
-  color: #ffb3b3;
-  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--zk-alert);
 }
 
+.result-note {
+  margin: -0.3rem 0 0.2rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  color: var(--zk-ink-muted);
+}
+
+/* レア度は記号＋名前。色はコモン〜スーパーレアは墨の濃淡、伝説だけ真鍮 */
 .rarity-badge {
-  font-size: 0.8rem;
-  letter-spacing: 0.1em;
-  padding: 0.2rem 0.9rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   margin: 0;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--zk-rule-strong);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  color: var(--zk-ink);
 }
 
-.rarity-common .rarity-badge { color: #cfd6e6; }
-.rarity-rare .rarity-badge { color: #8fd6ff; }
-.rarity-super_rare .rarity-badge { color: #d9a5ff; }
-.rarity-legendary .rarity-badge { color: #ffd76b; }
+.rarity-common .rarity-badge { color: var(--zk-ink-muted); }
+.rarity-legendary .rarity-badge { color: var(--zk-brass); border-bottom-color: var(--zk-brass); }
 
-.silhouette {
+/* 正体は魚拓を取るまで伏せ、照準だけを見せる */
+.result-reticle {
   width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  background: #000;
-  box-shadow: 0 0 40px rgba(255, 255, 255, 0.08) inset, 0 0 30px rgba(120, 150, 255, 0.25);
+  aspect-ratio: 1;
+  margin: 0.3rem 0;
+}
+
+.result-reticle.lost {
+  width: 96px;
+  border-color: var(--zk-alert);
+  opacity: 0.7;
 }
 
 .body-name {
-  font-size: 1.2rem;
-  color: #eaf2ff;
   margin: 0;
+  font-family: var(--zk-font-serif);
+  font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  color: var(--zk-ink);
 }
 
 .choice-row {
   display: flex;
-  gap: 0.8rem;
-  margin-top: 0.4rem;
+  gap: 0.7rem;
+  margin-top: 0.3rem;
 }
 
+/* 主操作は真鍮で塗った矩形、副操作は罫線だけの矩形 */
 .primary-btn,
 .secondary-btn {
-  border: none;
-  border-radius: 999px;
-  padding: 0.7rem 1.4rem;
+  padding: 0.6rem 1.3rem;
+  border: 1px solid var(--zk-brass);
+  border-radius: var(--zk-radius);
+  font-family: var(--zk-font-serif);
+  font-size: 0.9rem;
   font-weight: 700;
+  letter-spacing: 0.12em;
   cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .primary-btn {
-  background: linear-gradient(180deg, #ffe9b3, #f2c14e);
-  color: #3a2c0a;
+  background: var(--zk-brass);
+  color: var(--zk-bg);
+}
+
+.primary-btn:hover:not(:disabled) {
+  background: var(--zk-bg);
+  color: var(--zk-brass);
 }
 
 .secondary-btn {
-  background: rgba(255, 255, 255, 0.1);
-  color: #eaf2ff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-color: var(--zk-rule-strong);
+  background: transparent;
+  color: var(--zk-ink);
+}
+
+.secondary-btn:hover:not(:disabled) {
+  border-color: var(--zk-brass);
+}
+
+.primary-btn:focus-visible,
+.secondary-btn:focus-visible {
+  outline: 2px solid var(--zk-brass);
+  outline-offset: 2px;
 }
 
 .known-note {
-  color: #9fb3d9;
-  font-size: 0.85rem;
-  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  margin: 0.2rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--zk-rule);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  color: var(--zk-ink-muted);
+}
+
+.known-points {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--zk-brass);
+}
+
+.known-balance .zk-num {
+  color: var(--zk-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-card {
+    animation: none;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    transition: none;
+  }
 }

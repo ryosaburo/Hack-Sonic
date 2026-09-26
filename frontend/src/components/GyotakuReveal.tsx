@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CatalogEntry } from '../types';
-import { RARITY_LABEL } from '../types';
+import { RARITY_LABEL, RARITY_SYMBOL } from '../types';
 import './GyotakuReveal.css';
 
 const TOTAL_DURATION_MS: Record<string, number> = {
@@ -73,11 +73,20 @@ export function GyotakuReveal({ entry, doneLabel, onDone, registeredNote }: Gyot
 
         {step >= 3 && (
           <div className="gyotaku-info" onClick={(e) => e.stopPropagation()}>
-            <p className="rarity-badge">{RARITY_LABEL[entry.rarity]}</p>
-            <p className="body-name">{entry.body_name}</p>
-            <p className="mission-name">{entry.mission_name}</p>
-            <p className="capture-date">撮影日: {entry.capture_date}</p>
             <p className="credit-text">{entry.credit_text}</p>
+            <p className="rarity-badge">
+              <span className="zk-symbol" aria-hidden="true">
+                {RARITY_SYMBOL[entry.rarity]}
+              </span>
+              {RARITY_LABEL[entry.rarity]}
+            </p>
+            <p className="body-name">{entry.body_name}</p>
+            <dl className="gyotaku-specs">
+              <dt>探査機</dt>
+              <dd className="mission-name">{entry.mission_name}</dd>
+              <dt>撮影日</dt>
+              <dd className="capture-date zk-num">{entry.capture_date}</dd>
+            </dl>
             {registeredNote && <p className="registered-note">{registeredNote}</p>}
             <button type="button" className="primary-btn" onClick={onDone}>
               {doneLabel}

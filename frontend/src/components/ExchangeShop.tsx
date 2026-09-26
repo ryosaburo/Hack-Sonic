@@ -72,7 +72,7 @@ export function EconomyHud() {
   const s = useGameStore();
   if (s.phase !== 'idle') return null;
   return <div className="economy-hud">
-    <button className="secondary-btn" disabled={!s.ready || s.busy} onClick={s.openShop}>交換所 · {s.economy.balance} pt</button>
+    <button className="secondary-btn" disabled={!s.ready || s.busy} onClick={s.openShop}>交換所 <span className="zk-num">{s.economy.balance} pt</span></button>
     <label><input type="checkbox" checked={s.useLure} disabled={!s.ready || s.busy || !s.economy.inventory.lure} onChange={e => s.setUseLure(e.target.checked)} />
       誘引ルアーを使う（{s.economy.inventory.lure ?? 0}個）</label>
     <label><input type="checkbox" checked={Boolean(s.economy.equipped?.time_extension)} disabled={!s.ready || s.busy || !s.economy.inventory.time_extension} onChange={e => void s.setEquipment('time_extension', e.target.checked)} />
