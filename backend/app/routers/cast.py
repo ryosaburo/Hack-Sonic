@@ -7,7 +7,7 @@ from sqlmodel import Session, select
 
 from ..database import get_session
 from ..deps import get_current_user
-from ..economy import PRODUCTS, economy_transaction, rarity_multipliers, wallet_for, wallet_public
+from ..economy import PRODUCTS, economy_transaction, lure_rarities, rarity_multipliers, wallet_for, wallet_public
 from ..models import (
     CastAttempt, CastDecisionRequest, CastResolveRequest, CastResolveResponse,
     CastStartRequest, CastStartResponse, CatalogEntry, CatalogEntryPublic, Collection, User,
@@ -75,7 +75,10 @@ def cast_start(
         candidates = _in_season_entries(session, body.season)
         if not candidates:
             raise HTTPException(409, "catalog is empty")
-        rarity = _draw_rarity({c.rarity for c in candidates}, rarity_multipliers(body.x, body.y, body.use_lure))
+        available = {c.rarity for c in candidates}
+        if body.use_lure:
+            available = lure_rarities(available)
+        rarity = _draw_rarity(available, rarity_multipliers(body.x, body.y, body.use_lure))
         entry = _draw_entry(session, rarity, body.season, body.x, body.y)
         if entry is None:
             raise HTTPException(409, "no catalog entry for rarity")

@@ -1,6 +1,10 @@
 import { initAudio } from './audio';
 
-/** A quiet engine rumble that falls away on arrival. Owns and cleans up only its nodes. */
+// Low-pass filtering removes much of the noise energy; boost the previous 0.32 gain
+// by 4 (+12 dB) so the engine is audible at ordinary system volume settings.
+const ENGINE_GAIN = 1.28;
+
+/** An engine rumble that falls away on arrival. Owns and cleans up only its nodes. */
 export function createLaunchAudio() {
   const ctx = initAudio();
   const buffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
@@ -20,7 +24,7 @@ export function createLaunchAudio() {
       const ignition = Math.min(1, time / 0.8);
       const cutoff = Math.max(0, 1 - Math.max(0, time - 4.8) / 1.4);
       const cabin = time >= 3.4 ? 0.5 : 1;
-      volume.gain.setTargetAtTime(audible ? ignition * cutoff * cabin * 0.32 : 0, ctx.currentTime, 0.08);
+      volume.gain.setTargetAtTime(audible ? ignition * cutoff * cabin * ENGINE_GAIN : 0, ctx.currentTime, 0.08);
       filter.frequency.setTargetAtTime(time < 3.4 ? 240 : 110, ctx.currentTime, 0.12);
     },
     stop() {

@@ -1,5 +1,12 @@
-.economy-hud { position: absolute; left: 16px; top: 16px; z-index: 6; display: grid; gap: 8px; color: #eaf2ff; font-size: .8rem; max-width: calc(100% - 115px); }
-.economy-hud label { display: flex; align-items: center; gap: 4px; padding: 5px; border-radius: 8px; background: #080d20d9; }
+/* 釣り画面左上のHUD。図鑑・交換所と同じ観測台帳風 */
+.economy-hud { position: absolute; left: 16px; top: 16px; z-index: 6; display: grid; gap: 6px; justify-items: start; color: var(--zk-ink); font-size: .78rem; letter-spacing: .04em; max-width: calc(100% - 115px); }
+.economy-hud .secondary-btn { display: inline-flex; align-items: baseline; gap: .7rem; padding: .5rem .9rem; border: 1px solid var(--zk-rule-strong); border-radius: var(--zk-radius); background: var(--zk-panel); color: var(--zk-ink); font-family: var(--zk-font-serif); font-size: .9rem; font-weight: 700; letter-spacing: .15em; transition: border-color .15s ease; }
+.economy-hud .secondary-btn .zk-num { font-size: .85rem; font-weight: 500; letter-spacing: .02em; color: var(--zk-brass); }
+.economy-hud .secondary-btn:hover:not(:disabled) { border-color: var(--zk-brass); }
+.economy-hud .secondary-btn:focus-visible { outline: 2px solid var(--zk-brass); outline-offset: 2px; }
+.economy-hud label { display: flex; align-items: center; gap: 6px; padding: 4px 8px 4px 6px; border: 1px solid var(--zk-rule); border-radius: 2px; background: var(--zk-panel); color: var(--zk-ink-muted); }
+.economy-hud label:has(input:checked) { color: var(--zk-ink); border-color: var(--zk-rule-strong); }
+.economy-hud input { accent-color: var(--zk-brass); }
 
 /* 交換所: 図鑑と同じ観測台帳風。色はすべて styles/observatory.css のトークンから取る */
 .exchange-shop { width: min(760px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); box-sizing: border-box; overflow: auto; border: 1px solid var(--zk-rule-strong); border-radius: 2px; padding: 1.4rem 1.6rem 1.6rem; background: var(--zk-bg); color: var(--zk-ink); }
@@ -50,9 +57,9 @@
 .shop-spot-note { margin: .6rem 0 0; font-size: .8rem; line-height: 1.7; color: var(--zk-ink-muted); }
 
 button:disabled { opacity: .5; cursor: default; }
-.transaction-status .result-card { max-width: min(360px, calc(100vw - 60px)); min-width: 0; color: #eaf2ff; }
-.economy-error { position: absolute; bottom: 12px; left: 12px; right: 12px; z-index: 30; padding: 12px; border-radius: 10px; background: #482639; color: #fff; }
-.economy-error button { margin-left: 8px; }
+.transaction-status .result-card { max-width: min(360px, calc(100vw - 60px)); min-width: 0; color: var(--zk-ink); }
+.economy-error { position: absolute; bottom: 12px; left: 12px; right: 12px; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .8rem; padding: .6rem .9rem; border: 1px solid var(--zk-alert); border-radius: 2px; background: var(--zk-bg); color: var(--zk-alert); font-size: .85rem; }
+.economy-error button { flex: none; padding: .3rem .8rem; border: 1px solid var(--zk-alert); border-radius: var(--zk-radius); background: transparent; color: var(--zk-alert); cursor: pointer; }
 
 @media (max-width: 560px) {
   .exchange-shop { padding: 1.1rem 1rem 1.3rem; }

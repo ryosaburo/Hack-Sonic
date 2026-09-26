@@ -7,6 +7,7 @@ import { Zukan } from './components/Zukan';
 import { ExchangeShop, EconomyHud, TransactionStatus } from './components/ExchangeShop';
 import { LaunchIntro } from './components/LaunchIntro';
 import { setBgmDucked, setBgmSeason, startBgm } from './engine/bgm';
+import './styles/observatory.css';
 import './App.css';
 
 function App() {

@@ -1,3 +1,5 @@
+/* 魚拓の演出。図鑑・交換所と同じ観測台帳風で、色はすべて styles/observatory.css のトークンから取る。
+   引き上げ→スタンプ→実写への切り替え→情報表示、の流れ（step-0〜3）はそのまま */
 .gyotaku-backdrop {
   cursor: pointer;
 }
@@ -8,38 +10,46 @@
   flex-direction: column;
   align-items: center;
   gap: 0.6rem;
-  padding: 2rem;
-  border-radius: 18px;
-  background: radial-gradient(circle at 30% 20%, #171a2e, #05060f);
-  border: 3px solid #6b5a3a;
+  width: min(92%, 320px);
+  padding: 1.4rem 1.3rem;
+  border: 1px solid var(--zk-rule-strong);
+  border-radius: 2px;
+  background: var(--zk-bg);
+  color: var(--zk-ink);
   overflow: hidden;
   animation: lift-up 0.4s ease;
 }
 
 @keyframes lift-up {
-  from { transform: translateY(24px); opacity: 0; }
+  from { transform: translateY(8px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
-.gyotaku-card.rarity-rare { border-color: #d4af37; }
-.gyotaku-card.rarity-super_rare {
-  border-color: #e0b0ff;
-  border-width: 4px;
-  box-shadow: 0 0 40px rgba(224, 176, 255, 0.25);
-}
+/* レア度は光らせず、枠の線の色と上端の金線で示す（記号は情報欄に出す） */
+.gyotaku-card.rarity-rare { border-color: var(--zk-ink-muted); }
+.gyotaku-card.rarity-super_rare { border-color: var(--zk-ink); }
 .gyotaku-card.rarity-legendary {
-  border-color: #ffd76b;
-  border-width: 5px;
-  box-shadow: 0 0 60px rgba(255, 215, 107, 0.35);
+  border-color: var(--zk-brass);
+  box-shadow: inset 0 3px 0 var(--zk-brass);
 }
 
+/* 図版の四隅に見当マーク（図鑑の詳細と同じ） */
 .gyotaku-image-frame {
   position: relative;
   width: 220px;
   height: 220px;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #000;
+  padding: 10px;
+  --zk-mark: var(--zk-brass);
+  background:
+    linear-gradient(var(--zk-mark), var(--zk-mark)) top left / 14px 1px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) top left / 1px 14px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) top right / 14px 1px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) top right / 1px 14px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) bottom left / 14px 1px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) bottom left / 1px 14px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) bottom right / 14px 1px,
+    linear-gradient(var(--zk-mark), var(--zk-mark)) bottom right / 1px 14px;
+  background-repeat: no-repeat;
 }
 
 .gyotaku-image {
@@ -47,6 +57,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  background: #000;
   filter: brightness(0);
   transition: filter 0.9s ease;
 }
@@ -71,11 +82,11 @@
   to { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
 }
 
+/* スタンプの押し跡: 図版の内側に細い真鍮の枠 */
 .stamp-frame {
   position: absolute;
-  inset: 6px;
-  border: 3px solid rgba(255, 255, 255, 0.55);
-  border-radius: 8px;
+  inset: 16px;
+  border: 1px solid var(--zk-brass);
   pointer-events: none;
   opacity: 0;
 }
@@ -83,7 +94,7 @@
 .step-1 .stamp-frame,
 .step-2 .stamp-frame,
 .step-3 .stamp-frame {
-  opacity: 1;
+  opacity: 0.8;
   transition: opacity 0.3s ease;
 }
 
@@ -91,58 +102,103 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.5rem;
+  width: 100%;
   animation: fade-in 0.3s ease;
 }
 
-.gyotaku-info .body-name {
-  font-size: 1.3rem;
-  color: #fff;
-  margin: 0.2rem 0 0;
-}
-
-.gyotaku-info .mission-name {
-  color: #b9c6e6;
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-.gyotaku-info .capture-date,
 .gyotaku-info .credit-text {
-  color: #8b9ac2;
   margin: 0;
+  font-size: 0.7rem;
+  color: var(--zk-ink-muted);
+}
+
+.gyotaku-info .rarity-badge {
+  margin-top: 0.2rem;
+}
+
+.gyotaku-info .body-name {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.gyotaku-specs {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  width: 100%;
+  margin: 0;
+  border-top: 1px solid var(--zk-rule-strong);
   font-size: 0.8rem;
+  text-align: left;
+}
+
+.gyotaku-specs dt,
+.gyotaku-specs dd {
+  margin: 0;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--zk-rule);
+}
+
+.gyotaku-specs dt {
+  padding-right: 0.9rem;
+  border-right: 1px solid var(--zk-rule);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  color: var(--zk-ink-muted);
+}
+
+.gyotaku-specs dd {
+  padding-left: 0.9rem;
+  color: var(--zk-ink);
 }
 
 .registered-note {
-  color: #ffd76b;
+  margin: 0.1rem 0;
+  font-family: var(--zk-font-serif);
   font-size: 0.85rem;
-  margin: 0.3rem 0;
+  letter-spacing: 0.15em;
+  color: var(--zk-brass);
+}
+
+.gyotaku-info .primary-btn {
+  margin-top: 0.2rem;
 }
 
 .skip-hint {
-  color: #6f7ea6;
-  font-size: 0.75rem;
   margin: 0;
+  font-family: var(--zk-font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.15em;
+  color: var(--zk-ink-faint);
 }
 
+/* レア以上で舞う粒。光らせず、小さな点だけにする */
 .particle {
   position: absolute;
-  width: 5px;
-  height: 5px;
+  width: 3px;
+  height: 3px;
   border-radius: 50%;
-  background: #ffd76b;
+  background: var(--zk-ink-muted);
   opacity: 0;
   animation: particle-drift 1.4s ease-in infinite;
   pointer-events: none;
 }
 
-.rarity-rare .particle { background: #d4af37; }
-.rarity-super_rare .particle { background: #e0b0ff; }
-.rarity-legendary .particle { background: #ffd76b; }
+.rarity-super_rare .particle { background: var(--zk-ink); }
+.rarity-legendary .particle { background: var(--zk-brass); }
 
 @keyframes particle-drift {
   0% { opacity: 0; transform: translateY(0) scale(0.6); }
   30% { opacity: 0.9; }
   100% { opacity: 0; transform: translateY(-40px) scale(1.2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gyotaku-card {
+    animation: none;
+  }
+
+  .particle {
+    display: none;
+  }
 }

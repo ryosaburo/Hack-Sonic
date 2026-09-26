@@ -97,7 +97,7 @@ def test_exchange_idempotency_permanent_and_insufficient(game):
 
 def test_parallel_exchanges_cannot_overdraw(game):
     client, headers, user_id, _ = game
-    fund(user_id, 100)
+    fund(user_id, PRODUCTS['lure']['price'])
     def buy(_):
         return client.post('/api/economy/exchange', headers=headers, json={'request_id': str(uuid4()), 'product_id': 'lure'}).status_code
     with ThreadPoolExecutor(max_workers=2) as pool:
@@ -228,15 +228,16 @@ def test_test_points_granted_once_to_existing_player(game, monkeypatch):
     purchase = client.post('/api/economy/exchange', headers=headers, json={
         'request_id': str(uuid4()), 'product_id': 'lure',
     })
+    after_purchase = 537 - PRODUCTS['lure']['price']
     assert purchase.status_code == 200
-    assert purchase.json()['balance'] == 437
-    assert opening(None) == 437
+    assert purchase.json()['balance'] == after_purchase
+    assert opening(None) == after_purchase
 
     # 設定を切って再度有効にしても、同じプレイヤーには再付与しない。
     monkeypatch.delenv('SPACE_FISHING_TEST_POINTS')
-    assert opening(None) == 437
+    assert opening(None) == after_purchase
     monkeypatch.setenv('SPACE_FISHING_TEST_POINTS', '500')
-    assert opening(None) == 437
+    assert opening(None) == after_purchase
     with Session(engine) as session:
         assert session.get(Wallet, user_id).test_grant_applied is True
 

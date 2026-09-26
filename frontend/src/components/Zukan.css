@@ -17,20 +17,6 @@
   padding: 1.25rem clamp(1rem, 4vw, 2.5rem) 2rem;
 }
 
-.zk-symbol {
-  display: inline-block;
-  width: 1.2em;
-  text-align: center;
-  font-family: system-ui, sans-serif;
-  font-size: 1.05em;
-  line-height: 1;
-}
-
-.zk-rarity-common { color: var(--zk-ink-muted); }
-.zk-rarity-rare,
-.zk-rarity-super_rare { color: var(--zk-ink); }
-.zk-rarity-legendary { color: var(--zk-brass); }
-
 /* ---- ヘッダー ---- */
 .zukan-header {
   display: flex;
@@ -320,47 +306,6 @@
 
 .zukan-card .zk-symbol {
   font-size: 1rem;
-}
-
-/* ---- 未観測の照準 ---- */
-.zk-reticle {
-  position: relative;
-  display: block;
-  border: 1px dashed var(--zk-rule-strong);
-}
-
-.zk-reticle::before,
-.zk-reticle::after {
-  content: '';
-  position: absolute;
-  background: var(--zk-rule-strong);
-}
-
-.zk-reticle::before {
-  top: 18%;
-  bottom: 18%;
-  left: 50%;
-  width: 1px;
-}
-
-.zk-reticle::after {
-  left: 18%;
-  right: 18%;
-  top: 50%;
-  height: 1px;
-}
-
-.zk-reticle-dot {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 1;
-  width: 5px;
-  height: 5px;
-  margin: -2px 0 0 -2px;
-  border-radius: 50%;
-  background: var(--zk-bg);
-  box-shadow: 0 0 0 1px var(--zk-ink-faint);
 }
 
 /* ---- ヒント・詳細カード（観測カード） ---- */
