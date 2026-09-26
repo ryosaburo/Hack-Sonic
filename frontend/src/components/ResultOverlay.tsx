@@ -7,6 +7,8 @@ export function ResultOverlay() {
   const phase = useGameStore((s) => s.phase);
   const success = useGameStore((s) => s.lastResultSuccess);
   const entry = useGameStore((s) => s.currentEntry);
+  const earnedPoints = useGameStore((s) => s.earnedPoints);
+  const balance = useGameStore((s) => s.economy.balance);
   const isNew = useGameStore((s) => s.isNewSpecies);
   const keepGyotaku = useGameStore((s) => s.keepGyotaku);
   const releaseCatch = useGameStore((s) => s.releaseCatch);
@@ -53,7 +55,7 @@ export function ResultOverlay() {
             </button>
           </div>
         ) : (
-          <p className="known-note">図鑑に記録済み。少量の報酬を得た（自動的に逃がします）</p>
+          <p className="known-note">図鑑に記録済み。+{earnedPoints} pt（所持 {balance} pt）<br />自動的に逃がします</p>
         )}
       </div>
     </div>

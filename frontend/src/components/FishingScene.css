@@ -61,7 +61,7 @@
 
 .explore-hud {
   position: absolute;
-  top: 16px;
+  top: 144px;
   left: 16px;
   display: flex;
   flex-direction: column;
