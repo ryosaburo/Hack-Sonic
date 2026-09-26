@@ -25,7 +25,7 @@
   },
   {
     "id": "venus_clouds",
-    "body_name": "金星の雲",
+    "body_name": "金星",
     "mission_name": "あかつき",
     "image_url": "/catalog-images/venus.png",
     "credit_text": "©ISAS/JAXA",
@@ -42,7 +42,7 @@
   },
   {
     "id": "moon_tc",
-    "body_name": "月面(地形カメラ)",
+    "body_name": "月",
     "mission_name": "かぐや",
     "image_url": "/catalog-images/moon.jpg",
     "credit_text": "©国立天文台",
