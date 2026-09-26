@@ -107,38 +107,73 @@ export class ShakeController {
 // 無重力の釣り糸：下へ垂れず、たるんだ分は糸に沿って波打ちながらゆっくりうねる。
 // slack=0で一直線（張っている）、大きいほど大きくうねる。
 // さらに天の川の流れ（恒星風）に晒されて、中間点が微弱にそよぐ。
+// tension（0〜1超）が高いほど糸は細く明るく張り詰めて風にも流されにくくなり、
+// vibration は獲物に引かれた瞬間の弦のような細かい震えの振幅、
+// bow は獲物が左右に走ったときに糸の中ほどが横へふくらむ量（+は法線方向）。
+const LINE_SEGMENTS = 28;
+const linePoints: Vec2[] = Array.from({ length: LINE_SEGMENTS + 1 }, () => ({ x: 0, y: 0 }));
+
 export function drawFishingLine(
   ctx: CanvasRenderingContext2D,
   rodTip: Vec2,
   lurePos: Vec2,
   slack: number,
   t: number,
+  tension = 0,
+  vibration = 0,
+  bow = 0,
 ) {
   const dx = lurePos.x - rodTip.x;
   const dy = lurePos.y - rodTip.y;
   const len = Math.hypot(dx, dy) || 1;
   const nx = -dy / len;
   const ny = dx / len;
-  const segments = 28;
-  ctx.beginPath();
-  ctx.moveTo(rodTip.x, rodTip.y);
-  for (let i = 1; i <= segments; i++) {
-    const s = i / segments;
+  const taut = Math.min(1, tension);
+  const windScale = 1 - taut * 0.8;
+  linePoints[0].x = rodTip.x;
+  linePoints[0].y = rodTip.y;
+  for (let i = 1; i <= LINE_SEGMENTS; i++) {
+    const s = i / LINE_SEGMENTS;
     const envelope = Math.sin(Math.PI * s);
     const wave =
       0.55 * Math.sin(Math.PI * 2 * s + t * 0.7) +
       0.3 * Math.sin(Math.PI * 4.6 * s - t * 1.1 + 1.3) +
       0.15 * Math.sin(t * 0.35 + 2.1);
-    const off = slack * envelope * wave;
+    // 弦の基本振動と2倍振動を重ねた速い震え（両端は固定）
+    const vib =
+      vibration * (Math.sin(Math.PI * s) * Math.sin(t * 61) + 0.45 * Math.sin(Math.PI * 2 * s) * Math.sin(t * 97 + 1.1));
+    // 横ぶれは竿先寄りが大きく遅れる非対称な弧にする（獲物側は獲物と一緒に動くため）
+    const bowShape = envelope * (1.25 - 0.5 * s);
+    const off = slack * envelope * wave + vib + bow * bowShape;
     const px = rodTip.x + dx * s + nx * off;
     const py = rodTip.y + dy * s + ny * off;
     // 両端（竿先・ルアー）は固定し、中間点ほど強く風を受ける
     const wind = stellarWind(px, py, t);
-    const windEnvelope = Math.pow(envelope, 1.5);
-    ctx.lineTo(px + wind.x * windEnvelope, py + wind.y * windEnvelope);
+    const windEnvelope = Math.pow(envelope, 1.5) * windScale;
+    linePoints[i].x = px + wind.x * windEnvelope;
+    linePoints[i].y = py + wind.y * windEnvelope;
   }
-  ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-  ctx.lineWidth = 1.5;
+
+  const tracePath = () => {
+    ctx.beginPath();
+    ctx.moveTo(linePoints[0].x, linePoints[0].y);
+    for (let i = 1; i <= LINE_SEGMENTS; i++) ctx.lineTo(linePoints[i].x, linePoints[i].y);
+  };
+
+  // 張り詰めた糸は熱を帯びたように淡く光る
+  const glow = Math.max(0, tension - 0.45);
+  if (glow > 0) {
+    tracePath();
+    ctx.strokeStyle = `rgba(255,200,120,${Math.min(0.4, glow * 0.45)})`;
+    ctx.lineWidth = 4 + glow * 3;
+    ctx.stroke();
+  }
+  tracePath();
+  // たるみ時は白く半透明、張るほど明るい琥珀色になり、引き伸ばされて細くなる
+  const g = Math.round(255 - 40 * taut);
+  const b = Math.round(255 - 110 * taut);
+  ctx.strokeStyle = `rgba(255,${g},${b},${0.6 + 0.35 * taut})`;
+  ctx.lineWidth = 1.5 - 0.5 * taut;
   ctx.stroke();
 }
 
