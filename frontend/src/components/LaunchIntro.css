@@ -1,0 +1,61 @@
+.launch-intro { position: absolute; inset: 0; overflow: hidden; background: #07111f; color: #e9eef0; }
+.launch-canvas { display: block; width: 100%; height: 100%; }
+.launch-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, #050d19c9, transparent 72%), linear-gradient(0deg, #050b13b0, transparent 35%); }
+.launch-header { position: absolute; top: max(28px, env(safe-area-inset-top)); left: 5%; right: 5%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.launch-wordmark { font-size: 13px; letter-spacing: .24em; font-weight: 650; }
+.launch-wordmark span { font-size: 10px; color: #9bafbf; margin-left: 22px; letter-spacing: .12em; font-weight: 400; }
+.launch-sound { min-width: 80px; min-height: 44px; padding: 8px 12px; background: #111f2e66; color: #c9d8e2; border: 1px solid #b0c8d433; border-radius: 4px; cursor: pointer; font-size: 11px; letter-spacing: .1em; }
+.launch-sound span { margin-left: 8px; }
+.launch-title { position: absolute; left: 9%; top: 28%; }
+.launch-eyebrow { font: 10px/1.5 monospace; letter-spacing: .24em; color: #b6cbd8; display: flex; align-items: center; gap: 10px; margin: 0 0 26px; }
+.launch-eyebrow span { width: 24px; height: 1px; background: #d6b587; }
+.launch-title h1 { font-size: clamp(36px, 4.5vw, 68px); font-weight: 450; letter-spacing: .11em; line-height: 1.55; margin: 0; text-shadow: 0 3px 35px #05101a; }
+.launch-description { font-size: 13px; line-height: 2; letter-spacing: .12em; color: #aebfcc; margin: 22px 0 0; }
+.launch-actions { position: absolute; left: 9%; bottom: 16%; width: 280px; display: flex; flex-direction: column; gap: 12px; }
+.launch-depart { width: 100%; min-height: 54px; display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border: 1px solid #efe6d1; border-radius: 3px; background: #e7e2d6; color: #162737; font-size: 14px; letter-spacing: .18em; cursor: pointer; transition: background .2s, box-shadow .2s; }
+.launch-depart:hover { background: #faf3e5; box-shadow: 0 0 28px #d2b38326; }
+.launch-depart span { font-size: 20px; }
+.launch-skip { min-height: 44px; padding: 9px 0; background: #07101d55; border: 0; border-radius: 3px; color: #c3d2db; font-size: 12px; cursor: pointer; }
+.launch-skip span { margin-left: 10px; }
+.launch-intro button:focus-visible { outline: 2px solid #d6bc8f; outline-offset: 5px; }
+.launch-duration { margin: 0; color: #9cacb8; font-size: 10px; letter-spacing: .1em; text-align: center; }
+.launch-footer { position: absolute; bottom: max(25px, env(safe-area-inset-bottom)); left: 5%; right: 5%; display: flex; align-items: center; justify-content: space-between; color: #8fa3b2; font: 10px/1.5 monospace; letter-spacing: .12em; }
+.launch-footer i { display: inline-block; width: 5px; height: 5px; background: #97bfaa; border-radius: 50%; margin-right: 8px; }
+.is-launched .launch-shade { background: linear-gradient(0deg, #050b13de, transparent 30%); }
+.is-launched .launch-wordmark { opacity: .7; }
+.launch-flight { position: absolute; left: 50%; bottom: max(28px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(440px, 84%); text-align: center; outline: none; text-shadow: 0 2px 12px #000; }
+.launch-flight-meta { display: flex; justify-content: space-between; font: 10px/1.5 monospace; letter-spacing: .14em; color: #a2b8c7; font-variant-numeric: tabular-nums; }
+.launch-flight h2 { font-size: 20px; font-weight: 450; letter-spacing: .18em; margin: 12px 0 6px; }
+.launch-flight p { font-size: 11px; color: #b7c8d4; letter-spacing: .07em; margin: 0 0 20px; }
+.launch-progress { height: 1px; background: #bdd5e433; }
+.launch-progress > div { height: 100%; background: #d6bc8f; transform-origin: left; transform: scaleX(0); }
+.fishing-arrival { width: 100%; height: 100%; animation: fishing-arrival .6s ease-out both; }
+@keyframes fishing-arrival { from { opacity: 0; } to { opacity: 1; } }
+@media (max-aspect-ratio: 11/10) {
+  .launch-shade { background: linear-gradient(180deg, #05101c55, transparent 45%, #050b1399); }
+  .launch-header { top: max(16px, env(safe-area-inset-top)); }
+  .launch-wordmark span { display: none; }
+  .launch-title { top: 13%; left: 9%; }
+  .launch-title h1 { font-size: clamp(29px, 7vw, 46px); line-height: 1.5; }
+  .launch-eyebrow { margin-bottom: 14px; font-size: 9px; }
+  .launch-description { display: none; }
+  .launch-actions { bottom: max(9%, 54px); left: 50%; transform: translateX(-50%); width: min(300px, 82%); gap: 7px; }
+  .launch-footer { font-size: 8px; }
+}
+@media (max-height: 540px) and (min-aspect-ratio: 11/10) {
+  .launch-header { top: 12px; }
+  .launch-title { top: 22%; }
+  .launch-title h1 { font-size: 28px; line-height: 1.35; }
+  .launch-eyebrow { margin-bottom: 10px; }
+  .launch-description { display: none; }
+  .launch-actions { bottom: 11%; gap: 4px; }
+  .launch-depart { min-height: 44px; padding: 6px 20px; }
+  .launch-skip { min-height: 36px; }
+  .launch-duration { display: none; }
+  .launch-footer { bottom: 12px; }
+  .launch-flight { bottom: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fishing-arrival { animation: none; }
+  .launch-depart { transition: none; }
+}

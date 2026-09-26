@@ -6,7 +6,7 @@ let ctx: AudioContext | null = null;
 let lastReelClickAt = 0;
 const REEL_CLICK_THROTTLE_MS = 45;
 
-// AudioContextは自動再生制限があるため、最初の「キャスト」操作の中で呼ぶこと。
+// AudioContextは自動再生制限があるため、「出発する」や「キャスト」の操作内で呼ぶこと。
 export function initAudio() {
   if (!ctx) {
     ctx = new AudioContext();
