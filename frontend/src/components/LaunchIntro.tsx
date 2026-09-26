@@ -103,15 +103,17 @@ export function LaunchIntro({ onComplete }: { onComplete: () => void }) {
 
       {!launched ? (
         <>
-          <div className="launch-title">
-            <p className="launch-eyebrow"><span /> EARTH → MILKY WAY</p>
-            <h1>釣りに行こう。<br />天の川まで。</h1>
-            <p className="launch-description">地球を離れ、星の海へ。<br />あなただけの一匹に、出会う旅。</p>
-          </div>
-          <div className="launch-actions">
-            <button type="button" className="launch-depart" onClick={depart}>出発する <span aria-hidden="true">↗</span></button>
-            {returning && <button type="button" className="launch-skip" onClick={onComplete}>演出をスキップして釣りへ <span aria-hidden="true">→</span></button>}
-            <p className="launch-duration">地球 → 天の川 · 約10秒の旅</p>
+          <div className="launch-content">
+            <div className="launch-title">
+              <p className="launch-eyebrow"><span /> EARTH → MILKY WAY</p>
+              <h1>釣りに行こう。<br />天の川まで。</h1>
+              <p className="launch-description">地球を離れ、星の海へ。<br />あなただけの一匹に、出会う旅。</p>
+            </div>
+            <div className="launch-actions">
+              <button type="button" className="launch-depart" onClick={depart}>出発する <span aria-hidden="true">↗</span></button>
+              {returning && <button type="button" className="launch-skip" onClick={onComplete}>演出をスキップして釣りへ <span aria-hidden="true">→</span></button>}
+              <p className="launch-duration">地球 → 天の川 · 約10秒の旅</p>
+            </div>
           </div>
           <footer className="launch-footer"><span>01 / EARTH LAUNCH SITE</span><span><i /> 出発準備完了</span></footer>
         </>

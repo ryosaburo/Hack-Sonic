@@ -6,12 +6,14 @@
 .launch-wordmark span { font-size: 10px; color: #9bafbf; margin-left: 22px; letter-spacing: .12em; font-weight: 400; }
 .launch-sound { min-width: 80px; min-height: 44px; padding: 8px 12px; background: #111f2e66; color: #c9d8e2; border: 1px solid #b0c8d433; border-radius: 4px; cursor: pointer; font-size: 11px; letter-spacing: .1em; }
 .launch-sound span { margin-left: 8px; }
-.launch-title { position: absolute; left: 9%; top: 28%; }
+/* Keep copy and controls in one flow so wider headings cannot cover the buttons. */
+.launch-content { position: absolute; top: max(88px, 10%); bottom: max(54px, 10%); left: 9%; max-width: 82%; display: flex; flex-direction: column; justify-content: safe center; gap: clamp(20px, 4vh, 48px); overflow-y: auto; }
+.launch-title { flex-shrink: 0; }
 .launch-eyebrow { font: 10px/1.5 monospace; letter-spacing: .24em; color: #b6cbd8; display: flex; align-items: center; gap: 10px; margin: 0 0 26px; }
 .launch-eyebrow span { width: 24px; height: 1px; background: #d6b587; }
-.launch-title h1 { font-size: clamp(36px, 4.5vw, 68px); font-weight: 450; letter-spacing: .11em; line-height: 1.55; margin: 0; text-shadow: 0 3px 35px #05101a; }
+.launch-title h1 { font-size: clamp(36px, min(4.5vw, 7vh), 68px); font-weight: 450; letter-spacing: .11em; line-height: 1.55; margin: 0; text-shadow: 0 3px 35px #05101a; }
 .launch-description { font-size: 13px; line-height: 2; letter-spacing: .12em; color: #aebfcc; margin: 22px 0 0; }
-.launch-actions { position: absolute; left: 9%; bottom: 16%; width: 280px; display: flex; flex-direction: column; gap: 12px; }
+.launch-actions { flex-shrink: 0; width: 280px; max-width: 100%; display: flex; flex-direction: column; gap: 12px; }
 .launch-depart { width: 100%; min-height: 54px; display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border: 1px solid #efe6d1; border-radius: 3px; background: #e7e2d6; color: #162737; font-size: 14px; letter-spacing: .18em; cursor: pointer; transition: background .2s, box-shadow .2s; }
 .launch-depart:hover { background: #faf3e5; box-shadow: 0 0 28px #d2b38326; }
 .launch-depart span { font-size: 20px; }
@@ -35,20 +37,21 @@
   .launch-shade { background: linear-gradient(180deg, #05101c55, transparent 45%, #050b1399); }
   .launch-header { top: max(16px, env(safe-area-inset-top)); }
   .launch-wordmark span { display: none; }
-  .launch-title { top: 13%; left: 9%; }
+  .launch-content { display: contents; }
+  .launch-title { position: absolute; top: 13%; left: 9%; }
   .launch-title h1 { font-size: clamp(29px, 7vw, 46px); line-height: 1.5; }
   .launch-eyebrow { margin-bottom: 14px; font-size: 9px; }
   .launch-description { display: none; }
-  .launch-actions { bottom: max(9%, 54px); left: 50%; transform: translateX(-50%); width: min(300px, 82%); gap: 7px; }
+  .launch-actions { position: absolute; bottom: max(9%, 54px); left: 50%; transform: translateX(-50%); width: min(300px, 82%); gap: 7px; }
   .launch-footer { font-size: 8px; }
 }
 @media (max-height: 540px) and (min-aspect-ratio: 11/10) {
   .launch-header { top: 12px; }
-  .launch-title { top: 22%; }
+  .launch-content { top: 70px; bottom: 40px; gap: 16px; }
   .launch-title h1 { font-size: 28px; line-height: 1.35; }
   .launch-eyebrow { margin-bottom: 10px; }
   .launch-description { display: none; }
-  .launch-actions { bottom: 11%; gap: 4px; }
+  .launch-actions { gap: 4px; }
   .launch-depart { min-height: 44px; padding: 6px 20px; }
   .launch-skip { min-height: 36px; }
   .launch-duration { display: none; }
