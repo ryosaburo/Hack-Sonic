@@ -1,3 +1,4 @@
+import math
 import random
 import time
 
@@ -32,11 +33,26 @@ def _draw_rarity(available: set[str], multipliers: list[float] | None = None) ->
     return random.choices(rarities, weights=[weights[r] for r in rarities], k=1)[0]
 
 
-def _draw_entry(session: Session, rarity: str, season: str | None) -> CatalogEntry | None:
+def _catch_weight(entry: CatalogEntry, season: str | None, x: float, y: float) -> float:
+    # rare以上だけ、得意な季節・座標で同じレア度の中から選ばれやすくなる。commonはどこでも重みのまま
+    bonus = entry.catch_bonus
+    if not bonus or entry.rarity == "common":
+        return entry.weight
+    weight = entry.weight
+    if season in bonus.get("seasons", []):
+        weight *= bonus.get("season_multiplier", 1)
+    area = bonus.get("area")
+    # area は画面の「座標」表示の単位（ワールド座標の1/10、yは上向きが正）
+    if area and math.hypot(x / 10 - area["x"], -y / 10 - area["y"]) <= area["radius"]:
+        weight *= bonus.get("area_multiplier", 1)
+    return weight
+
+
+def _draw_entry(session: Session, rarity: str, season: str | None, x: float = 0, y: float = 0) -> CatalogEntry | None:
     candidates = [e for e in _in_season_entries(session, season) if e.rarity == rarity]
     if not candidates:
         return None
-    return random.choices(candidates, weights=[c.weight for c in candidates], k=1)[0]
+    return random.choices(candidates, weights=[_catch_weight(c, season, x, y) for c in candidates], k=1)[0]
 
 
 @router.post("/start", response_model=CastStartResponse)
@@ -60,7 +76,7 @@ def cast_start(
         if not candidates:
             raise HTTPException(409, "catalog is empty")
         rarity = _draw_rarity({c.rarity for c in candidates}, rarity_multipliers(body.x, body.y, body.use_lure))
-        entry = _draw_entry(session, rarity, body.season)
+        entry = _draw_entry(session, rarity, body.season, body.x, body.y)
         if entry is None:
             raise HTTPException(409, "no catalog entry for rarity")
         if body.use_lure:

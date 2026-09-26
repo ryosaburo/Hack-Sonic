@@ -27,7 +27,7 @@ def game(monkeypatch):
             session.commit()
             user_id, species_id = user.id, entry.id
         monkeypatch.setattr(cast, '_draw_rarity', lambda available, multipliers=None: 'common')
-        monkeypatch.setattr(cast, '_draw_entry', lambda session, rarity, season: session.get(CatalogEntry, species_id))
+        monkeypatch.setattr(cast, '_draw_entry', lambda session, rarity, season, x=0, y=0: session.get(CatalogEntry, species_id))
         yield client, headers, user_id, species_id
 
 

@@ -39,6 +39,9 @@ def _add_missing_columns():
     if "point" not in columns:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE catalog ADD COLUMN point INTEGER NOT NULL DEFAULT 0"))
+    if "catch_bonus" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE catalog ADD COLUMN catch_bonus JSON"))
     wallet_columns = {c["name"] for c in inspect(engine).get_columns("wallet")}
     if "test_grant_applied" not in wallet_columns:
         with engine.begin() as conn:
@@ -58,7 +61,7 @@ def sync_catalog_from_seed():
             point = item.get("point", 0)
             if type(point) is not int or point < 0:
                 raise ValueError(f"Invalid point for catalog entry: {item['id']}")
-            # catch_bonus などフロント用の項目はテーブルに列がないので同期しない
+            # テーブルに列がない項目は同期しない
             fields = {key: item.get(key) for key in CatalogEntry.model_fields}
             fields["capture_date"] = date.fromisoformat(item["capture_date"])
             fields["point"] = point

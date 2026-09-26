@@ -25,6 +25,17 @@ export function weightedDraw<T>(values: T[], weights: number[]): T {
   for (let i = 0; i < values.length; i++) { n -= weights[i]; if (n < 0) return values[i]; }
   return values[values.length - 1];
 }
+// rare以上だけ、得意な季節・座標で同じレア度の中から選ばれやすくなる。commonはどこでも重みのまま
+export function catchWeight(entry: CatalogEntry, season: Season, x: number, y: number): number {
+  const bonus = entry.catch_bonus;
+  if (!bonus || entry.rarity === 'common') return entry.weight;
+  let weight = entry.weight;
+  if (bonus.seasons?.includes(season)) weight *= bonus.season_multiplier ?? 1;
+  const area = bonus.area;
+  // x, y はワールド座標なので、画面の「座標」表示の単位に直して比べる
+  if (area && Math.hypot(x / 10 - area.x, -y / 10 - area.y) <= area.radius) weight *= bonus.area_multiplier ?? 1;
+  return weight;
+}
 export function drawMock(catalog: CatalogEntry[], season: Season, x: number, y: number, lure: boolean): CatalogEntry {
   const seasonal = catalog.filter(e => !e.seasons || e.seasons.includes(season));
   const candidates = seasonal.length ? seasonal : catalog;
@@ -35,5 +46,5 @@ export function drawMock(catalog: CatalogEntry[], season: Season, x: number, y: 
   const order = Object.keys(RARITY_WEIGHTS);
   const rarity = weightedDraw(rarities, rarities.map(r => RARITY_WEIGHTS[r] * Math.min(6, multipliers[order.indexOf(r)])));
   const entries = candidates.filter(e => e.rarity === rarity);
-  return weightedDraw(entries, entries.map(e => e.weight));
+  return weightedDraw(entries, entries.map(e => catchWeight(e, season, x, y)));
 }
