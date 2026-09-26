@@ -50,10 +50,12 @@
 .exchange-shop .primary-btn:disabled { border-color: var(--zk-rule); border-style: dashed; color: var(--zk-ink-faint); opacity: 1; }
 .shop-error .close-btn { flex: none; border-color: var(--zk-alert); color: var(--zk-alert); }
 
-.shop-spot-specs { display: grid; grid-template-columns: auto minmax(0, 1fr); margin: 0; font-size: .8rem; }
-.shop-spot-specs dt, .shop-spot-specs dd { margin: 0; padding: .4rem 0; border-bottom: 1px solid var(--zk-rule); }
-.shop-spot-specs dt { padding-right: .9rem; border-right: 1px solid var(--zk-rule); letter-spacing: .1em; white-space: nowrap; color: var(--zk-ink-muted); }
-.shop-spot-specs dd { padding-left: .9rem; color: var(--zk-ink); }
+.shop-spot-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.shop-spot-table th, .shop-spot-table td { padding: .45rem .6rem; border-bottom: 1px solid var(--zk-rule); text-align: left; font-weight: 400; }
+.shop-spot-table thead th { padding-top: .5rem; font-size: .68rem; letter-spacing: .12em; color: var(--zk-ink-muted); border-bottom-color: var(--zk-rule-strong); }
+.shop-spot-table tbody th { font-family: var(--zk-font-serif); font-weight: 700; letter-spacing: .05em; color: var(--zk-ink); white-space: nowrap; }
+.shop-spot-table td { color: var(--zk-ink); white-space: nowrap; }
+.shop-spot-table th:first-child { padding-left: 0; }
 .shop-spot-note { margin: .6rem 0 0; font-size: .8rem; line-height: 1.7; color: var(--zk-ink-muted); }
 
 button:disabled { opacity: .5; cursor: default; }

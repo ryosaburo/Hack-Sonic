@@ -16,6 +16,22 @@ AREA_INFO_PRICES: dict[str, int] = SHOP["area_info_prices"]
 AREA_INFO_PREFIX = "area_info:"
 
 
+def purchase_limit(product: dict) -> int | None:
+    """同じ商品を持てる上限。消耗品は上限なし、それ以外は max_count（既定1）まで。"""
+    if product["kind"] == "consumable":
+        return None
+    return product.get("max_count", 1)
+
+
+def owned_spots(inventory: dict) -> list[dict]:
+    """釣り場情報は1回の交換で1か所ずつ、shop.json に並べた順に開示する。"""
+    spots = []
+    for product_id in dict.fromkeys(s["product"] for s in SHOP["spots"]):
+        count = inventory.get(product_id, 0)
+        spots += [s for s in SHOP["spots"] if s["product"] == product_id][:count]
+    return spots
+
+
 def area_info_key(species_id: str) -> str:
     # 開示済みの印は所持品に「area_info:<天体ID>」として持つ
     return f"{AREA_INFO_PREFIX}{species_id}"
@@ -68,7 +84,7 @@ def wallet_public(wallet: Wallet | None) -> dict:
             product_id: bool(inventory.get(product_id) and wallet and (wallet.equipped or {}).get(product_id))
             for product_id in ("time_extension", "power_reel")
         },
-        "spots": [s for s in SHOP["spots"] if inventory.get(s["id"], 0) > 0],
+        "spots": owned_spots(inventory),
     }
 
 
