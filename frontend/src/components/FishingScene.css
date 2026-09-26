@@ -26,39 +26,6 @@
   height: 100%;
 }
 
-.idle-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  text-align: center;
-  pointer-events: none;
-  padding-bottom: 18vh;
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-
-/* 一度動き始めたら景色を見せるためにタイトルを退かせる */
-.idle-overlay.explored {
-  opacity: 0;
-  transform: translateY(-24px);
-}
-
-.title-logo {
-  font-size: clamp(1.8rem, 6vw, 3rem);
-  letter-spacing: 0.15em;
-  color: #eaf2ff;
-  text-shadow: 0 0 24px rgba(140, 180, 255, 0.6);
-  margin: 0;
-}
-
-.title-sub {
-  color: #a9b8d9;
-  margin: 0;
-}
-
 .explore-hud {
   position: absolute;
   top: 144px;

@@ -123,7 +123,6 @@ export function FishingScene() {
   const coordRef = useRef<HTMLSpanElement | null>(null);
   const zoneRef = useRef<HTMLSpanElement | null>(null);
   const densityFillRef = useRef<HTMLDivElement | null>(null);
-  const [explored, setExplored] = useState(false);
   const [seasonChanged, setSeasonChanged] = useState(false);
 
   const engineRef = useRef({
@@ -225,7 +224,6 @@ export function FishingScene() {
       engineRef.current.panVX = 0;
       engineRef.current.panVY = 0;
       movePan((dx * unit) / zoom, (dy * unit) / zoom);
-      setExplored(true);
     }
     wrapper.addEventListener('wheel', onWheel, { passive: false });
 
@@ -651,7 +649,6 @@ export function FishingScene() {
         if (useGameStore.getState().phase !== 'idle') return;
         ev.preventDefault();
         keys.add(ev.code);
-        setExplored(true);
         return;
       }
       if (ev.code !== 'Space' || ev.repeat) return;
@@ -728,7 +725,6 @@ export function FishingScene() {
     e.panVX = clampSpeed(e.panVX * 0.6 + (dx / dtSec) * 0.4);
     e.panVY = clampSpeed(e.panVY * 0.6 + (dy / dtSec) * 0.4);
     e.drag = { id: drag.id, x: ev.clientX, y: ev.clientY, time: ev.timeStamp };
-    if (dx !== 0 || dy !== 0) setExplored(true);
   }
 
   function endDrag(ev: ReactPointerEvent<HTMLDivElement>) {
@@ -776,11 +772,6 @@ export function FishingScene() {
 
         {isIdle && (
           <>
-            <div className={`idle-overlay ${explored ? 'explored' : ''}`}>
-              <h1 className="title-logo">天の川釣り</h1>
-              <p className="title-sub">星々の海で、天体を釣り上げよう</p>
-            </div>
-
             {seasonChanged && (
               <div key={season} className="season-banner">
                 <span className="season-banner-name">{SEASON_LABEL[season]}の天の川</span>
@@ -813,7 +804,6 @@ export function FishingScene() {
                       if (s === season) return;
                       setSeason(s);
                       setSeasonChanged(true);
-                      setExplored(true);
                     }}
                   >
                     {SEASON_LABEL[s]}
