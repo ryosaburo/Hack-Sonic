@@ -11,13 +11,32 @@ from .models import CatalogEntry, Collection
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dev.db")
+
+
+def normalize_database_url(url: str) -> str:
+    """Supabase などが発行する postgres(ql):// の接続文字列を、同梱の psycopg 3 ドライバで使う形に揃える。"""
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url.removeprefix(prefix)
+    return url
+
+
+DATABASE_URL = normalize_database_url(os.getenv("DATABASE_URL", "sqlite:///./dev.db"))
 CATALOG_SEED_PATH = Path(__file__).parent / "data" / "catalog.json"
 # カタログから外した天体のID。既存DBからも、その天体の収集記録ごと削除する
 RETIRED_CATALOG_IDS = ["slim_landing"]  # slim_touchdown に改名
 
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args)
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, echo=False, connect_args={"check_same_thread": False})
+else:
+    # Supabase の接続プール（Supavisor）のトランザクションモードは prepared statement を使えないので無効にする。
+    # 使い回す接続が切れていても落ちないよう、取り出すたびに生存確認する。
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        pool_pre_ping=True,
+        connect_args={"prepare_threshold": None},
+    )
 
 
 def get_session():
@@ -28,6 +47,18 @@ def get_session():
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
     _add_missing_columns()
+    _enable_row_level_security()
+
+
+# Supabase は public スキーマのテーブルを anon キーの REST API（PostgREST）にも公開する。
+# ポリシーなしで RLS を有効にしてそこからの読み書きを塞ぐ。バックエンドはテーブルの所有者として
+# 接続するので RLS の影響を受けない。
+def _enable_row_level_security():
+    if engine.dialect.name != "postgresql":
+        return
+    with engine.begin() as conn:
+        for table in SQLModel.metadata.sorted_tables:
+            conn.execute(text(f'ALTER TABLE "{table.name}" ENABLE ROW LEVEL SECURITY'))
 
 
 # create_all は既存テーブルに列を足さないので、後から増えた列だけ追加する（マイグレーションツール導入までのつなぎ）

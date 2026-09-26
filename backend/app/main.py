@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -18,7 +19,8 @@ app = FastAPI(title="Space Fishing API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    # 本番のフロントのURLは CORS_ORIGINS にカンマ区切りで足す（例: https://example.vercel.app）
+    allow_origins=["http://localhost:5173", *filter(None, (o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",")))],
     allow_methods=["*"],
     allow_headers=["*"],
 )
