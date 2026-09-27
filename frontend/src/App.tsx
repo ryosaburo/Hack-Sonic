@@ -4,7 +4,7 @@ import { FishingScene } from './components/FishingScene';
 import { ResultOverlay } from './components/ResultOverlay';
 import { GyotakuReveal } from './components/GyotakuReveal';
 import { Zukan } from './components/Zukan';
-import { ExchangeShop, EconomyHud, TransactionStatus } from './components/ExchangeShop';
+import { ExchangeShop, TransactionStatus } from './components/ExchangeShop';
 import { LaunchIntro } from './components/LaunchIntro';
 import { setBgmDucked, setBgmSeason, startBgm } from './engine/bgm';
 import { readResume } from './engine/resume';
@@ -31,7 +31,6 @@ function App() {
   const isNewSpecies = useGameStore((s) => s.isNewSpecies);
   const returnToIdle = useGameStore((s) => s.returnToIdle);
   const loadCatalog = useGameStore((s) => s.loadCatalog);
-  const openZukan = useGameStore((s) => s.openZukan);
 
   useEffect(() => {
     loadCatalog();
@@ -83,14 +82,7 @@ function App() {
 
       <Zukan />
       <ExchangeShop />
-      <EconomyHud />
       <TransactionStatus />
-
-      {phase === 'idle' && (
-        <button type="button" className="zukan-fab" onClick={openZukan}>
-          図鑑
-        </button>
-      )}
     </div>
   );
 }

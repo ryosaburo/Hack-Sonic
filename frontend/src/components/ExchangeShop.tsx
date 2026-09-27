@@ -85,13 +85,20 @@ export function EconomyHud() {
   if (s.phase !== 'idle') return null;
   return <div className="economy-hud">
     <button className="secondary-btn" disabled={!s.ready || s.busy} onClick={s.openShop}>交換所 <span className="zk-num">{s.economy.balance} pt</span></button>
+    <EquipmentControls />
+  </div>;
+}
+
+export function EquipmentControls() {
+  const s = useGameStore();
+  return <>
     <label><input type="checkbox" checked={s.useLure} disabled={!s.ready || s.busy || !s.economy.inventory.lure} onChange={e => s.setUseLure(e.target.checked)} />
       誘引ルアーを使う（{s.economy.inventory.lure ?? 0}個）</label>
     <label><input type="checkbox" checked={Boolean(s.economy.equipped?.time_extension)} disabled={!s.ready || s.busy || !s.economy.inventory.time_extension} onChange={e => void s.setEquipment('time_extension', e.target.checked)} />
       星時計を装備{!s.economy.inventory.time_extension && '（未所持）'}</label>
     <label><input type="checkbox" checked={Boolean(s.economy.equipped?.power_reel)} disabled={!s.ready || s.busy || !s.economy.inventory.power_reel} onChange={e => void s.setEquipment('power_reel', e.target.checked)} />
       強化リールを装備{!s.economy.inventory.power_reel && '（未所持）'}</label>
-  </div>;
+  </>;
 }
 
 export function TransactionStatus() {
