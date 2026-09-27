@@ -30,7 +30,6 @@ import {
   SEASON_DESCRIPTION,
   SEASON_LABEL,
   SEASON_LOOKS,
-  SEASON_ORDER,
   blendLookInto,
   cloneLook,
   rgba,
@@ -39,6 +38,7 @@ import { drawSpotOverlay } from '../engine/spotOverlay';
 import { readResume, saveResume } from '../engine/resume';
 import { pushResume } from '../api/client';
 import { RARITY_CONFIG } from '../types';
+import { FishingControls } from './FishingControls';
 import './FishingScene.css';
 
 // 竿の根元・ルアー投入点はプレイヤー位置(pan)からの相対座標
@@ -205,7 +205,7 @@ export function FishingScene() {
   const phaseTelegraph = useGameStore((s) => s.phaseTelegraph);
   const currentEntry = useGameStore((s) => s.currentEntry);
   const season = useGameStore((s) => s.season);
-  const setSeason = useGameStore((s) => s.setSeason);
+  const useLure = useGameStore((s) => s.useLure);
   const startCast = useGameStore((s) => s.startCast);
   const pressStart = useGameStore((s) => s.pressStart);
   const pressEnd = useGameStore((s) => s.pressEnd);
@@ -715,6 +715,7 @@ export function FishingScene() {
         return;
       }
       if (ev.code !== 'Space') return;
+      if ((ev.target as HTMLElement).closest('button, input, select, dialog')) return;
       ev.preventDefault();
       handlePressEnd();
     }
@@ -844,29 +845,11 @@ export function FishingScene() {
               </div>
             </div>
 
-            {/* 季節の切り替えは画面上部、図鑑ボタンの左に置く */}
-            <div className="season-picker" role="radiogroup" aria-label="季節">
-              {SEASON_ORDER.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  role="radio"
-                  aria-checked={s === season}
-                  className={`season-option season-option-${s} ${s === season ? 'active' : ''}`}
-                  onClick={(ev) => {
-                    ev.stopPropagation();
-                    if (s === season) return;
-                    setSeason(s);
-                    setSeasonChanged(true);
-                  }}
-                >
-                  {SEASON_LABEL[s]}
-                </button>
-              ))}
-            </div>
-
             <div className="idle-bottom">
               <p className="explore-hint">ドラッグ・スクロール・矢印キーで天の川を移動</p>
+              <p className={`cast-lure-note ${useLure ? 'is-active' : ''}`} aria-live="polite">
+                {useLure ? '次のキャストでルアーを1個消費' : 'ルアー：使用しない'}
+              </p>
               <button
                 type="button"
                 className="cast-button"
@@ -908,6 +891,7 @@ export function FishingScene() {
           </div>
         )}
       </div>
+      {isIdle && <FishingControls onSeasonChange={() => setSeasonChanged(true)} />}
     </div>
   );
 }

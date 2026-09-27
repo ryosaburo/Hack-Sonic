@@ -4,13 +4,13 @@ import { FishingScene } from './components/FishingScene';
 import { ResultOverlay } from './components/ResultOverlay';
 import { GyotakuReveal } from './components/GyotakuReveal';
 import { Zukan } from './components/Zukan';
-import { ExchangeShop, EconomyHud, TransactionStatus } from './components/ExchangeShop';
+import { ExchangeShop, TransactionStatus } from './components/ExchangeShop';
 import { LaunchIntro } from './components/LaunchIntro';
 import { setBgmDucked, setBgmSeason, startBgm } from './engine/bgm';
 import { readResume } from './engine/resume';
 import { initAudio } from './engine/audio';
 import { AccountPanel } from './components/AccountPanel';
-import { pullServerResume, useAccount, watchAuth } from './auth/account';
+import { pullServerResume, watchAuth } from './auth/account';
 import { accessToken, supabase } from './auth/supabase';
 import './styles/observatory.css';
 import './App.css';
@@ -36,8 +36,6 @@ function App() {
   const isNewSpecies = useGameStore((s) => s.isNewSpecies);
   const returnToIdle = useGameStore((s) => s.returnToIdle);
   const loadCatalog = useGameStore((s) => s.loadCatalog);
-  const openZukan = useGameStore((s) => s.openZukan);
-  const signedIn = useAccount((s) => s.email !== null);
 
   useEffect(() => {
     loadCatalog();
@@ -111,19 +109,7 @@ function App() {
 
       <Zukan />
       <ExchangeShop />
-      <EconomyHud />
       <TransactionStatus />
-
-      {phase === 'idle' && (
-        <button type="button" className="zukan-fab" onClick={openZukan}>
-          図鑑
-        </button>
-      )}
-      {phase === 'idle' && supabase && (
-        <button type="button" className="account-fab" onClick={() => useAccount.getState().openPanel()}>
-          {signedIn ? 'アカウント' : 'ログイン'}
-        </button>
-      )}
       <AccountPanel />
     </div>
   );
