@@ -36,6 +36,7 @@ import {
   rgba,
 } from '../engine/seasons';
 import { drawSpotOverlay } from '../engine/spotOverlay';
+import { readResume, saveResume } from '../engine/resume';
 import { RARITY_CONFIG } from '../types';
 import './FishingScene.css';
 
@@ -99,6 +100,12 @@ function zoneName(density: number): string {
 }
 
 const START_PAN_Y = riverCenterY(0) - CATCH_POINT.y;
+// 前回いた場所から再開する（川の外に出ないよう保存値も同じ範囲に収める）
+function initialPan() {
+  const resume = readResume();
+  if (!resume) return { x: 0, y: START_PAN_Y };
+  return { x: resume.panX, y: clampPanY(resume.panX, resume.panY) };
+}
 
 interface RodState {
   panX: number;
@@ -130,12 +137,13 @@ export function FishingScene() {
   const densityFillRef = useRef<HTMLDivElement | null>(null);
   const [seasonChanged, setSeasonChanged] = useState(false);
 
+  const [startPan] = useState(initialPan);
   const engineRef = useRef({
-    camera: Object.assign(new Camera(), { y: START_PAN_Y, targetY: START_PAN_Y }),
+    camera: Object.assign(new Camera(), { x: startPan.x, y: startPan.y, targetX: startPan.x, targetY: startPan.y }),
     shake: new ShakeController(),
     crank: new Crank(),
-    panX: 0,
-    panY: START_PAN_Y,
+    panX: startPan.x,
+    panY: startPan.y,
     panVX: 0,
     panVY: 0,
     drag: null as { id: number; x: number; y: number; time: number } | null,
@@ -163,8 +171,8 @@ export function FishingScene() {
       t: 0,
       scale: ROD_SCALE,
     } as RodDrawParams,
-    lureX: 0,
-    lureY: START_PAN_Y + ROD_BASE_Y - ROD_LENGTH,
+    lureX: startPan.x,
+    lureY: startPan.y + ROD_BASE_Y - ROD_LENGTH,
     lureVX: 0,
     lureVY: 0,
     lureSpin: 0,
@@ -644,6 +652,27 @@ export function FishingScene() {
       wrapper.removeEventListener('wheel', onWheel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 最後にいた場所を覚えておき、再読込しても同じ場所・季節から再開できるようにする
+  useEffect(() => {
+    let savedX = NaN;
+    let savedY = NaN;
+    function persist() {
+      const e = engineRef.current;
+      if (e.panX === savedX && e.panY === savedY) return;
+      savedX = e.panX;
+      savedY = e.panY;
+      saveResume({ panX: e.panX, panY: e.panY, season: useGameStore.getState().season });
+    }
+    persist();
+    const timer = window.setInterval(persist, 1000);
+    window.addEventListener('pagehide', persist);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('pagehide', persist);
+      persist();
+    };
   }, []);
 
   // PCではSpaceキーでも操作できるようにする（onPressStart/onPressEndへ共通化）

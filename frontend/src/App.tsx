@@ -7,14 +7,21 @@ import { Zukan } from './components/Zukan';
 import { ExchangeShop, EconomyHud, TransactionStatus } from './components/ExchangeShop';
 import { LaunchIntro } from './components/LaunchIntro';
 import { setBgmDucked, setBgmSeason, startBgm } from './engine/bgm';
+import { readResume } from './engine/resume';
 import './styles/observatory.css';
 import './App.css';
 
+function playBgm() {
+  try { startBgm(useGameStore.getState().season); } catch { /* 音が出せなくても釣りは続けられる */ }
+}
+
 function App() {
-  const [arrived, setArrived] = useState(false);
+  // 一度釣り場に着いていれば、再読込しても出発演出を挟まず釣り場から再開する
+  const [resumed] = useState(() => readResume() !== null);
+  const [arrived, setArrived] = useState(resumed);
   const enterFishing = useCallback(() => {
     // スキップのクリック中にも呼ばれるので、その操作でAudioContextを解禁してBGMを始められる
-    try { startBgm(useGameStore.getState().season); } catch { /* 音が出せなくても釣りは続けられる */ }
+    playBgm();
     setArrived(true);
   }, []);
   const phase = useGameStore((s) => s.phase);
@@ -28,6 +35,18 @@ function App() {
   useEffect(() => {
     loadCatalog();
   }, [loadCatalog]);
+
+  // 再開時は自動再生の制限があるので、最初の操作を待ってからBGMを始める
+  useEffect(() => {
+    if (!resumed) return;
+    const events = ['pointerdown', 'keydown'] as const;
+    const start = () => {
+      events.forEach((type) => window.removeEventListener(type, start, true));
+      playBgm();
+    };
+    events.forEach((type) => window.addEventListener(type, start, true));
+    return () => events.forEach((type) => window.removeEventListener(type, start, true));
+  }, [resumed]);
 
   // BGMは季節に合わせて移ろい、巻き上げ・結果・魚拓演出の間は効果音を聞かせるため控えめにする
   useEffect(() => {
