@@ -23,6 +23,7 @@ export function LaunchIntro({ onComplete }: { onComplete: () => void }) {
   const audioRef = useRef<ReturnType<typeof createLaunchAudio> | null>(null);
   const mutedRef = useRef(false);
   const startedRef = useRef(false);
+  const guideRef = useRef<HTMLDialogElement>(null);
   const season = useGameStore((s) => s.season);
 
   useEffect(() => {
@@ -111,10 +112,27 @@ export function LaunchIntro({ onComplete }: { onComplete: () => void }) {
             </div>
             <div className="launch-actions">
               <button type="button" className="launch-depart" onClick={depart}>出発する <span aria-hidden="true">↗</span></button>
+              <button type="button" className="launch-guide-open" onClick={() => guideRef.current?.showModal()}>遊び方</button>
               {returning && <button type="button" className="launch-skip" onClick={onComplete}>演出をスキップして釣りへ <span aria-hidden="true">→</span></button>}
               <p className="launch-duration">地球 → 天の川 · 約10秒の旅</p>
             </div>
           </div>
+          <dialog ref={guideRef} className="launch-guide" aria-labelledby="launch-guide-title" onClick={(e) => {
+            // 枠の外（背景）をクリックしたら閉じる
+            if (e.target === e.currentTarget) e.currentTarget.close();
+          }}>
+            <h2 id="launch-guide-title">遊び方</h2>
+            <ol>
+              <li><b>探す</b><span>ドラッグ・スクロール・矢印キー（WASD）で天の川を移動。場所によって出会える獲物が変わります。</span></li>
+              <li><b>投げる</b><span>「ここで竿をキャストする」でルアーを放ち、アタリを待ちます。</span></li>
+              <li><b>巻く</b><span>画面の表示に合わせて操作し、制限時間内に獲物の体力を0にすれば釣り上げ成功。</span>
+                <span className="launch-guide-keys"><em>連打！</em>画面をタップ / Spaceキーを連打</span>
+                <span className="launch-guide-keys"><em>長押し！</em>画面を押し続ける / Spaceキーを長押し</span>
+                <span>合図が光ったら操作が切り替わる前触れ。手を止めると獲物は体力を回復します。</span></li>
+              <li><b>集める</b><span>釣った獲物は図鑑に登録。季節を切り替えると出会える獲物も変わります。</span></li>
+            </ol>
+            <form method="dialog"><button type="submit" className="launch-guide-close">閉じる</button></form>
+          </dialog>
           <footer className="launch-footer"><span>01 / EARTH LAUNCH SITE</span><span><i /> 出発準備完了</span></footer>
         </>
       ) : (
