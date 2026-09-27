@@ -79,3 +79,4 @@
 @media (max-height: 540px) and (min-aspect-ratio: 11/10) {
   .launch-guide-open { min-height: 36px; }
 }
+.launch-guide-open { padding-left: 12px; padding-right: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

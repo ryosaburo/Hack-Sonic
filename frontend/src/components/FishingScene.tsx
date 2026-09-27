@@ -30,13 +30,15 @@ import {
   SEASON_DESCRIPTION,
   SEASON_LABEL,
   SEASON_LOOKS,
-  SEASON_ORDER,
   blendLookInto,
   cloneLook,
   rgba,
 } from '../engine/seasons';
 import { drawSpotOverlay } from '../engine/spotOverlay';
+import { readResume, saveResume } from '../engine/resume';
+import { pushResume } from '../api/client';
 import { RARITY_CONFIG } from '../types';
+import { FishingControls } from './FishingControls';
 import './FishingScene.css';
 
 // 竿の根元・ルアー投入点はプレイヤー位置(pan)からの相対座標
@@ -99,6 +101,12 @@ function zoneName(density: number): string {
 }
 
 const START_PAN_Y = riverCenterY(0) - CATCH_POINT.y;
+// 前回いた場所から再開する（川の外に出ないよう保存値も同じ範囲に収める）
+function initialPan() {
+  const resume = readResume();
+  if (!resume) return { x: 0, y: START_PAN_Y };
+  return { x: resume.panX, y: clampPanY(resume.panX, resume.panY) };
+}
 
 interface RodState {
   panX: number;
@@ -130,12 +138,13 @@ export function FishingScene() {
   const densityFillRef = useRef<HTMLDivElement | null>(null);
   const [seasonChanged, setSeasonChanged] = useState(false);
 
+  const [startPan] = useState(initialPan);
   const engineRef = useRef({
-    camera: Object.assign(new Camera(), { y: START_PAN_Y, targetY: START_PAN_Y }),
+    camera: Object.assign(new Camera(), { x: startPan.x, y: startPan.y, targetX: startPan.x, targetY: startPan.y }),
     shake: new ShakeController(),
     crank: new Crank(),
-    panX: 0,
-    panY: START_PAN_Y,
+    panX: startPan.x,
+    panY: startPan.y,
     panVX: 0,
     panVY: 0,
     drag: null as { id: number; x: number; y: number; time: number } | null,
@@ -163,8 +172,8 @@ export function FishingScene() {
       t: 0,
       scale: ROD_SCALE,
     } as RodDrawParams,
-    lureX: 0,
-    lureY: START_PAN_Y + ROD_BASE_Y - ROD_LENGTH,
+    lureX: startPan.x,
+    lureY: startPan.y + ROD_BASE_Y - ROD_LENGTH,
     lureVX: 0,
     lureVY: 0,
     lureSpin: 0,
@@ -196,7 +205,7 @@ export function FishingScene() {
   const phaseTelegraph = useGameStore((s) => s.phaseTelegraph);
   const currentEntry = useGameStore((s) => s.currentEntry);
   const season = useGameStore((s) => s.season);
-  const setSeason = useGameStore((s) => s.setSeason);
+  const useLure = useGameStore((s) => s.useLure);
   const startCast = useGameStore((s) => s.startCast);
   const pressStart = useGameStore((s) => s.pressStart);
   const pressEnd = useGameStore((s) => s.pressEnd);
@@ -646,6 +655,44 @@ export function FishingScene() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 最後にいた場所を覚えておき、再読込しても同じ場所・季節から再開できるようにする。
+  // 端末には1秒ごと、サーバー（ログインすれば別の端末でも続きから遊べる）には変化があれば10秒ごとと、ページを離れるときに送る
+  useEffect(() => {
+    let savedX = NaN;
+    let savedY = NaN;
+    let savedSeason = '';
+    let pushed = '';
+    let pushedAt = 0;
+    function persist(leaving = false) {
+      const e = engineRef.current;
+      const { season, usingBackend } = useGameStore.getState();
+      if (e.panX !== savedX || e.panY !== savedY || season !== savedSeason) {
+        savedX = e.panX;
+        savedY = e.panY;
+        savedSeason = season;
+        saveResume({ panX: e.panX, panY: e.panY, season });
+      }
+      const body = { pan_x: Math.round(e.panX * 100) / 100, pan_y: Math.round(e.panY * 100) / 100, season };
+      const key = JSON.stringify(body);
+      if (!usingBackend || key === pushed || (!leaving && performance.now() - pushedAt < 10_000)) return;
+      pushed = key;
+      pushedAt = performance.now();
+      pushResume(body, leaving).catch(() => { pushed = ''; });
+    }
+    const leave = () => persist(true);
+    const onVisibility = () => { if (document.hidden) leave(); };
+    persist();
+    const timer = window.setInterval(() => persist(), 1000);
+    window.addEventListener('pagehide', leave);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('pagehide', leave);
+      document.removeEventListener('visibilitychange', onVisibility);
+      persist();
+    };
+  }, []);
+
   // PCではSpaceキーでも操作できるようにする（onPressStart/onPressEndへ共通化）
   // 待機中は矢印キー / WASD で天の川を移動できる
   useEffect(() => {
@@ -668,6 +715,7 @@ export function FishingScene() {
         return;
       }
       if (ev.code !== 'Space') return;
+      if ((ev.target as HTMLElement).closest('button, input, select, dialog')) return;
       ev.preventDefault();
       handlePressEnd();
     }
@@ -797,29 +845,11 @@ export function FishingScene() {
               </div>
             </div>
 
-            {/* 季節の切り替えは画面上部、図鑑ボタンの左に置く */}
-            <div className="season-picker" role="radiogroup" aria-label="季節">
-              {SEASON_ORDER.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  role="radio"
-                  aria-checked={s === season}
-                  className={`season-option season-option-${s} ${s === season ? 'active' : ''}`}
-                  onClick={(ev) => {
-                    ev.stopPropagation();
-                    if (s === season) return;
-                    setSeason(s);
-                    setSeasonChanged(true);
-                  }}
-                >
-                  {SEASON_LABEL[s]}
-                </button>
-              ))}
-            </div>
-
             <div className="idle-bottom">
               <p className="explore-hint">ドラッグ・スクロール・矢印キーで天の川を移動</p>
+              <p className={`cast-lure-note ${useLure ? 'is-active' : ''}`} aria-live="polite">
+                {useLure ? '次のキャストでルアーを1個消費' : 'ルアー：使用しない'}
+              </p>
               <button
                 type="button"
                 className="cast-button"
@@ -861,6 +891,7 @@ export function FishingScene() {
           </div>
         )}
       </div>
+      {isIdle && <FishingControls onSeasonChange={() => setSeasonChanged(true)} />}
     </div>
   );
 }

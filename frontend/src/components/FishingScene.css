@@ -110,6 +110,15 @@
   letter-spacing: 0.08em;
 }
 
+.cast-lure-note {
+  display: none;
+  margin: 0;
+  color: var(--zk-ink-muted);
+  font-size: .75rem;
+}
+
+.cast-lure-note.is-active { color: var(--zk-brass); }
+
 /* 主操作だけは真鍮で塗る（アクセントはこの1色） */
 .cast-button {
   pointer-events: auto;
@@ -356,20 +365,39 @@
   }
 }
 
-/* 狭い画面では左上の交換所と重ならないよう、図鑑ボタンの下の段に回す */
+/* 縦持ちのスマホでは、釣り場情報と主操作だけを星空の上に残す。 */
 @media (max-width: 600px) {
-  .season-picker {
-    top: calc(16px + 2.6rem + 8px);
-    right: 16px;
+  .explore-hud {
+    top: max(12px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
+    min-width: 0;
+    max-width: calc(100% - 144px);
+    gap: 2px;
+    padding: 8px 10px;
   }
 
-  .season-option {
-    min-width: 2rem;
-    padding: 0.25rem 0.45rem;
+  .explore-zone { font-size: .8rem; letter-spacing: .02em; }
+  .explore-season { font-size: .65rem; }
+  .explore-coord { font-size: .65rem; letter-spacing: 0; }
+  .density-bar { height: 4px; }
+
+  .idle-bottom {
+    bottom: max(20px, env(safe-area-inset-bottom));
+    width: min(320px, calc(100% - 32px));
+    gap: 8px;
   }
 
-  /* 左上のHUDの下に出す（縦に並ぶ狭い画面で重ならないように） */
+  .explore-hint { display: none; }
+  .cast-lure-note {
+    display: block;
+    padding: 3px 8px;
+    border-radius: var(--zk-radius);
+    background: var(--zk-panel);
+  }
+
+  .cast-button { min-height: 48px; width: 100%; padding: 10px 16px; font-size: .9rem; }
+
   .season-banner {
-    top: 310px;
+    top: 26%;
   }
 }

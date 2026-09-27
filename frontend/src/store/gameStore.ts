@@ -4,6 +4,7 @@ import { RARITY_CONFIG } from '../types';
 import * as api from '../api/client';
 import catalogMock from '../data/catalog.mock.json';
 import { seasonOf, type Season } from '../engine/seasons';
+import { readResume, saveResume } from '../engine/resume';
 import { AREA_INFO_PRICES, areaInfoKey, drawMock, EMPTY_ECONOMY, MOCK_PRODUCTS, mockAreas, mockEconomy, purchaseLimit, type CatchArea, type Economy, type Product } from '../engine/economy';
 
 const MOCK_KEY = 'space-fishing:mock-progress:v1';
@@ -53,7 +54,7 @@ interface GameState extends Context {
 const contextOf = (s: Context): Context => ({ currentEntry: s.currentEntry, isNewSpecies: s.isNewSpecies, catchCount: s.catchCount, earnedPoints: s.earnedPoints });
 export const useGameStore = create<GameState>((set, get) => ({
   phase: 'idle', usingBackend: false, ready: false, loading: false, busy: false, error: null,
-  catalog: mockCatalog, collection: {}, season: seasonOf(new Date()),
+  catalog: mockCatalog, collection: {}, season: readResume()?.season ?? seasonOf(new Date()),
   economy: EMPTY_ECONOMY, products: MOCK_PRODUCTS, useLure: false, pending: null, areas: {},
   attemptId: null, currentEntry: null, gauge: 100, timeLeft: 0, timeLimit: 0, damageMultiplier: 1,
   reelPhaseMode: 'tap', phaseTimer: 0, phaseTelegraph: false, isHolding: false, tapPulse: 0,
@@ -286,6 +287,10 @@ export const useGameStore = create<GameState>((set, get) => ({
 }));
 
 useGameStore.subscribe((s, before) => {
+  if (s.season !== before.season) {
+    const resume = readResume();
+    if (resume) saveResume({ ...resume, season: s.season });
+  }
   if (s.ready && !s.usingBackend && (s.economy !== before.economy || s.collection !== before.collection)) {
     const previous = readSaved<{ testGrantApplied?: boolean }>(MOCK_KEY);
     save(MOCK_KEY, { economy: s.economy, collection: s.collection, testGrantApplied: previous?.testGrantApplied ?? false });

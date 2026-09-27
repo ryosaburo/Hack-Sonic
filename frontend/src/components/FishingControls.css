@@ -1,0 +1,74 @@
+.fishing-menu-trigger {
+  display: none;
+}
+
+.fishing-menu {
+  inset: auto 0 0;
+  width: 100%;
+  max-width: 600px;
+  max-height: calc(100dvh - max(20px, env(safe-area-inset-top)));
+  margin: 0 auto;
+  padding: 18px 20px max(20px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--zk-rule-strong);
+  border-radius: 12px 12px 0 0;
+  background: var(--zk-bg);
+  color: var(--zk-ink);
+}
+
+.fishing-menu::backdrop { background: rgb(5 7 12 / .65); }
+.fishing-menu[open] { animation: fishing-menu-enter .18s ease-out; }
+.fishing-menu-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fishing-menu h2 { margin: 0; font-family: var(--zk-font-serif); font-size: 1.1rem; }
+.fishing-menu h3 { margin: 20px 0 8px; color: var(--zk-ink-muted); font-size: .8rem; font-weight: 500; }
+
+.fishing-menu button,
+.fishing-menu-trigger {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--zk-rule-strong);
+  border-radius: var(--zk-radius);
+  background: var(--zk-panel);
+  color: var(--zk-ink);
+  font-size: .85rem;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.fishing-menu button:focus-visible,
+.fishing-menu-trigger:focus-visible,
+.fishing-menu input:focus-visible { outline: 2px solid var(--zk-brass); outline-offset: 2px; }
+.fishing-menu-links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+.fishing-menu-links button { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 8px; min-height: 52px; }
+.fishing-menu-links .zk-num { color: var(--zk-brass); font-size: .8rem; }
+.fishing-menu-equipment label { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 0; font-size: .85rem; }
+.fishing-menu-equipment input { width: 18px; height: 18px; flex-shrink: 0; margin: 0; accent-color: var(--zk-brass); }
+.fishing-menu .season-picker { position: static; display: flex; }
+.fishing-menu .season-option { flex: 1; border: none; border-radius: 0; }
+.fishing-menu .season-option + .season-option { border-left: 1px solid var(--zk-rule); }
+.fishing-menu .season-option.active { color: var(--zk-brass); box-shadow: inset 0 -2px var(--zk-brass); }
+.fishing-menu .fishing-menu-return { width: 100%; margin-top: 22px; border-color: var(--zk-brass); color: var(--zk-brass); }
+
+@keyframes fishing-menu-enter {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .desktop-fishing-controls { display: none; }
+  .fishing-menu-trigger {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    z-index: 6;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fishing-menu[open] { animation: none; }
+}
+.fishing-menu-links .fishing-menu-account { grid-column: 1 / -1; min-height: 44px; }
