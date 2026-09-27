@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { SEASON_LABEL, SEASON_ORDER } from '../engine/seasons';
 import { EconomyHud, EquipmentControls } from './ExchangeShop';
+import { useAccount } from '../auth/account';
+import { supabase } from '../auth/supabase';
 import './FishingControls.css';
 
 function SeasonPicker({ onChange }: { onChange: () => void }) {
@@ -33,6 +35,9 @@ export function FishingControls({ onSeasonChange }: { onSeasonChange: () => void
   const balance = useGameStore(s => s.economy.balance);
   const openShop = useGameStore(s => s.openShop);
   const openZukan = useGameStore(s => s.openZukan);
+  const signedIn = useAccount(s => s.email !== null);
+  const openAccount = useAccount(s => s.openPanel);
+  const accountLabel = signedIn ? 'アカウント' : 'ログイン';
 
   useEffect(() => {
     const narrow = window.matchMedia('(max-width: 600px)');
@@ -51,6 +56,7 @@ export function FishingControls({ onSeasonChange }: { onSeasonChange: () => void
       <EconomyHud />
       <SeasonPicker onChange={onSeasonChange} />
       <button type="button" className="zukan-fab" onClick={openZukan}>図鑑</button>
+      {supabase && <button type="button" className="account-fab" onClick={() => openAccount()}>{accountLabel}</button>}
     </div>
     <button ref={trigger} type="button" className="fishing-menu-trigger" aria-haspopup="dialog"
       aria-controls="fishing-menu" onClick={() => dialog.current?.showModal()}>
@@ -74,6 +80,9 @@ export function FishingControls({ onSeasonChange }: { onSeasonChange: () => void
           交換所 <span className="zk-num">{balance} pt</span>
         </button>
         <button type="button" disabled={busy} onClick={() => { closeMenu(); openZukan(); }}>図鑑</button>
+        {supabase && <button type="button" className="fishing-menu-account" onClick={() => { closeMenu(); openAccount(); }}>
+          {signedIn ? 'アカウント（ログイン中）' : 'ログインして続きを保存'}
+        </button>}
       </nav>
       <section className="fishing-menu-equipment" aria-labelledby="fishing-equipment-title">
         <h3 id="fishing-equipment-title">次のキャストの準備</h3>

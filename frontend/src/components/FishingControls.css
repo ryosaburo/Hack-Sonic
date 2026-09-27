@@ -71,3 +71,4 @@
 @media (prefers-reduced-motion: reduce) {
   .fishing-menu[open] { animation: none; }
 }
+.fishing-menu-links .fishing-menu-account { grid-column: 1 / -1; min-height: 44px; }

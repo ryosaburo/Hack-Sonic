@@ -9,6 +9,9 @@ import { LaunchIntro } from './components/LaunchIntro';
 import { setBgmDucked, setBgmSeason, startBgm } from './engine/bgm';
 import { readResume } from './engine/resume';
 import { initAudio } from './engine/audio';
+import { AccountPanel } from './components/AccountPanel';
+import { pullServerResume, watchAuth } from './auth/account';
+import { accessToken, supabase } from './auth/supabase';
 import './styles/observatory.css';
 import './App.css';
 
@@ -18,8 +21,10 @@ function playBgm() {
 
 function App() {
   // 一度釣り場に着いていれば、再読込しても出発演出を挟まず釣り場から再開する
-  const [resumed] = useState(() => readResume() !== null);
+  const [resumed, setResumed] = useState(() => readResume() !== null);
   const [arrived, setArrived] = useState(resumed);
+  // ログイン中は、別の端末で進めた続きをサーバーから受け取るまで画面を出さない
+  const [booting, setBooting] = useState(() => supabase !== null);
   const enterFishing = useCallback(() => {
     // スキップのクリック中にも呼ばれるので、その操作でAudioContextを解禁してBGMを始められる
     playBgm();
@@ -35,6 +40,26 @@ function App() {
   useEffect(() => {
     loadCatalog();
   }, [loadCatalog]);
+
+  useEffect(() => watchAuth(), []);
+
+  useEffect(() => {
+    if (!supabase) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        // サーバーが起動中などで遅いときは待たずに、端末に残っている続きから始める
+        const resume = (await accessToken()) ? await pullServerResume(2500) : null;
+        if (resume && !cancelled) {
+          useGameStore.setState({ season: resume.season });
+          setResumed(true);
+          setArrived(true);
+        }
+      } catch { /* 端末の続きから始める */ }
+      if (!cancelled) setBooting(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // 再開時は自動再生の制限があるので、操作を待ってからBGMを始める。
   // スマホのタッチ開始など音を解禁できない操作もあるため、実際に鳴り始めるまで操作のたびに試す
@@ -61,8 +86,10 @@ function App() {
     setBgmDucked(phase === 'reeling' || phase === 'result' || phase === 'gyotaku');
   }, [phase]);
 
+  if (booting) return <div className="app-root" />;
+
   if (!arrived) {
-    return <div className="app-root"><LaunchIntro onComplete={enterFishing} /></div>;
+    return <div className="app-root"><LaunchIntro onComplete={enterFishing} /><AccountPanel /></div>;
   }
 
   return (
@@ -83,6 +110,7 @@ function App() {
       <Zukan />
       <ExchangeShop />
       <TransactionStatus />
+      <AccountPanel />
     </div>
   );
 }
