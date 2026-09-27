@@ -8,6 +8,7 @@ import { ExchangeShop, EconomyHud, TransactionStatus } from './components/Exchan
 import { LaunchIntro } from './components/LaunchIntro';
 import { setBgmDucked, setBgmSeason, startBgm } from './engine/bgm';
 import { readResume } from './engine/resume';
+import { initAudio } from './engine/audio';
 import './styles/observatory.css';
 import './App.css';
 
@@ -36,16 +37,21 @@ function App() {
     loadCatalog();
   }, [loadCatalog]);
 
-  // 再開時は自動再生の制限があるので、最初の操作を待ってからBGMを始める
+  // 再開時は自動再生の制限があるので、操作を待ってからBGMを始める。
+  // スマホのタッチ開始など音を解禁できない操作もあるため、実際に鳴り始めるまで操作のたびに試す
   useEffect(() => {
     if (!resumed) return;
-    const events = ['pointerdown', 'keydown'] as const;
-    const start = () => {
-      events.forEach((type) => window.removeEventListener(type, start, true));
+    const events = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const;
+    const stop = () => events.forEach((type) => window.removeEventListener(type, start, true));
+    function start() {
       playBgm();
-    };
+      let audio: AudioContext;
+      try { audio = initAudio(); } catch { stop(); return; }
+      if (audio.state === 'running') stop();
+      else void audio.resume().then(() => { if (audio.state === 'running') stop(); }, () => {});
+    }
     events.forEach((type) => window.addEventListener(type, start, true));
-    return () => events.forEach((type) => window.removeEventListener(type, start, true));
+    return stop;
   }, [resumed]);
 
   // BGMは季節に合わせて移ろい、巻き上げ・結果・魚拓演出の間は効果音を聞かせるため控えめにする
