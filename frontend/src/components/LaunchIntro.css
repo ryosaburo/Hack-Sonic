@@ -62,3 +62,20 @@
   .fishing-arrival { animation: none; }
   .launch-depart { transition: none; }
 }
+.launch-guide-open { min-height: 44px; padding: 9px 0; background: #111f2e66; border: 1px solid #b0c8d433; border-radius: 3px; color: #d8e3ea; font-size: 12px; letter-spacing: .18em; cursor: pointer; }
+.launch-guide-open:hover { background: #1a2d3f88; }
+.launch-guide { width: min(460px, calc(100% - 32px)); max-height: calc(100% - 48px); overflow-y: auto; padding: 28px 28px 22px; background: #0b1726f2; color: #e9eef0; border: 1px solid #b0c8d433; border-radius: 4px; box-shadow: 0 20px 60px #000a; }
+.launch-guide::backdrop { background: #02070dcc; }
+.launch-guide h2 { margin: 0 0 18px; font-size: 16px; font-weight: 500; letter-spacing: .24em; }
+.launch-guide ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; counter-reset: guide; }
+.launch-guide li { counter-increment: guide; display: flex; flex-direction: column; gap: 5px; padding-left: 34px; position: relative; font-size: 12px; line-height: 1.8; color: #b7c8d4; letter-spacing: .04em; }
+.launch-guide li::before { content: counter(guide, decimal-leading-zero); position: absolute; left: 0; top: 1px; font: 10px/1.8 monospace; color: #d6b587; letter-spacing: .1em; }
+.launch-guide b { font-size: 13px; font-weight: 550; color: #e9eef0; letter-spacing: .16em; }
+.launch-guide-keys em { display: inline-block; min-width: 58px; margin-right: 8px; font-style: normal; color: #d6bc8f; }
+.launch-guide form { margin-top: 22px; }
+.launch-guide-close { width: 100%; min-height: 44px; background: #e7e2d6; color: #162737; border: 0; border-radius: 3px; font-size: 13px; letter-spacing: .18em; cursor: pointer; }
+.launch-guide-close:hover { background: #faf3e5; }
+.launch-guide button:focus-visible { outline: 2px solid #d6bc8f; outline-offset: 4px; }
+@media (max-height: 540px) and (min-aspect-ratio: 11/10) {
+  .launch-guide-open { min-height: 36px; }
+}
