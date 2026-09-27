@@ -37,6 +37,7 @@ import {
 } from '../engine/seasons';
 import { drawSpotOverlay } from '../engine/spotOverlay';
 import { readResume, saveResume } from '../engine/resume';
+import { pushResume } from '../api/client';
 import { RARITY_CONFIG } from '../types';
 import './FishingScene.css';
 
@@ -654,23 +655,40 @@ export function FishingScene() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 最後にいた場所を覚えておき、再読込しても同じ場所・季節から再開できるようにする
+  // 最後にいた場所を覚えておき、再読込しても同じ場所・季節から再開できるようにする。
+  // 端末には1秒ごと、サーバー（ログインすれば別の端末でも続きから遊べる）には変化があれば10秒ごとと、ページを離れるときに送る
   useEffect(() => {
     let savedX = NaN;
     let savedY = NaN;
-    function persist() {
+    let savedSeason = '';
+    let pushed = '';
+    let pushedAt = 0;
+    function persist(leaving = false) {
       const e = engineRef.current;
-      if (e.panX === savedX && e.panY === savedY) return;
-      savedX = e.panX;
-      savedY = e.panY;
-      saveResume({ panX: e.panX, panY: e.panY, season: useGameStore.getState().season });
+      const { season, usingBackend } = useGameStore.getState();
+      if (e.panX !== savedX || e.panY !== savedY || season !== savedSeason) {
+        savedX = e.panX;
+        savedY = e.panY;
+        savedSeason = season;
+        saveResume({ panX: e.panX, panY: e.panY, season });
+      }
+      const body = { pan_x: Math.round(e.panX * 100) / 100, pan_y: Math.round(e.panY * 100) / 100, season };
+      const key = JSON.stringify(body);
+      if (!usingBackend || key === pushed || (!leaving && performance.now() - pushedAt < 10_000)) return;
+      pushed = key;
+      pushedAt = performance.now();
+      pushResume(body, leaving).catch(() => { pushed = ''; });
     }
+    const leave = () => persist(true);
+    const onVisibility = () => { if (document.hidden) leave(); };
     persist();
-    const timer = window.setInterval(persist, 1000);
-    window.addEventListener('pagehide', persist);
+    const timer = window.setInterval(() => persist(), 1000);
+    window.addEventListener('pagehide', leave);
+    document.addEventListener('visibilitychange', onVisibility);
     return () => {
       window.clearInterval(timer);
-      window.removeEventListener('pagehide', persist);
+      window.removeEventListener('pagehide', leave);
+      document.removeEventListener('visibilitychange', onVisibility);
       persist();
     };
   }, []);

@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import create_db_and_tables, sync_catalog_from_seed
-from .routers import cast, catalog, collection, economy
+from .routers import account, cast, catalog, collection, economy
 
 
 @asynccontextmanager
@@ -29,6 +29,7 @@ app.include_router(catalog.router)
 app.include_router(collection.router)
 app.include_router(cast.router)
 app.include_router(economy.router)
+app.include_router(account.router)
 
 
 @app.get("/")

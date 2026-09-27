@@ -1,6 +1,7 @@
 import type { CatalogEntry, CollectionRecord, Rarity } from '../types';
 import type { CatchArea, Economy, Product } from '../engine/economy';
 import type { Season } from '../engine/seasons';
+import { accessToken } from '../auth/supabase';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000';
 const DEVICE_ID_KEY = 'space-fishing:device-id';
@@ -14,13 +15,20 @@ function getDeviceId(): string {
   return id;
 }
 
+// ログアウトしたら新しい端末IDで遊び直す（アカウントに引き継いだ進行データを端末IDだけで触らせない）
+export function resetDeviceId() {
+  try { localStorage.removeItem(DEVICE_ID_KEY); } catch { /* 次の読み込みで作り直す */ }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = await accessToken();
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
     signal: init?.signal ?? AbortSignal.timeout(15000),
     headers: {
       'Content-Type': 'application/json',
       'X-Device-Id': getDeviceId(),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...init?.headers,
     },
   });
@@ -88,3 +96,8 @@ export const setEquipment = (body: { product_id: 'time_extension' | 'power_reel'
 export const fetchAreas = () => request<Record<string, CatchArea>>('/api/economy/areas');
 export const revealArea = (body: { request_id: string; species_id: string }) => request<{ economy: Economy; areas: Record<string, CatchArea> }>('/api/economy/reveal', { method: 'POST', body: JSON.stringify(body) });
 export const castDecision =(body: { attempt_id: string; decision: 'keep' | 'release' }) => request<{ decision: string }>('/api/cast/decision', { method: 'POST', body: JSON.stringify(body) });
+
+export interface ServerResume { pan_x: number; pan_y: number; season: Season }
+export const fetchMe = (timeoutMs = 15000) => request<{ logged_in: boolean; resume: ServerResume | null }>('/api/me', { signal: AbortSignal.timeout(timeoutMs) });
+// ページを閉じる瞬間にも送れるよう keepalive を使えるようにする
+export const pushResume = (body: ServerResume, keepalive = false) => request<ServerResume>('/api/me/resume', { method: 'PUT', body: JSON.stringify(body), keepalive });

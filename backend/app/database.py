@@ -73,6 +73,14 @@ def _add_missing_columns():
     if "catch_bonus" not in columns:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE catalog ADD COLUMN catch_bonus JSON"))
+    user_columns = {c["name"] for c in inspect(engine).get_columns("users")}
+    for name, sql_type in [("auth_user_id", "VARCHAR"), ("resume_pan_x", "FLOAT"), ("resume_pan_y", "FLOAT"), ("resume_season", "VARCHAR")]:
+        if name not in user_columns:
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN {name} {sql_type}"))
+    # NULL（未ログイン）は何件あってもよいが、同じアカウントを2人のユーザーに紐づけない
+    with engine.begin() as conn:
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_auth_user_id ON users (auth_user_id)"))
     wallet_columns = {c["name"] for c in inspect(engine).get_columns("wallet")}
     if "test_grant_applied" not in wallet_columns:
         with engine.begin() as conn:

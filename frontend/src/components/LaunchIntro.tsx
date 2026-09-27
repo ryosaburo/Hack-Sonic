@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createLaunchAudio } from '../engine/launchAudio';
 import { drawLaunchScene, LAUNCH_DURATION, LAUNCH_STAGES } from '../engine/launchScene';
 import { useGameStore } from '../store/gameStore';
+import { useAccount } from '../auth/account';
+import { supabase } from '../auth/supabase';
 import './LaunchIntro.css';
 
 const ARRIVAL_KEY = 'space-fishing:launch-arrived:v1';
@@ -25,6 +27,8 @@ export function LaunchIntro({ onComplete }: { onComplete: () => void }) {
   const startedRef = useRef(false);
   const guideRef = useRef<HTMLDialogElement>(null);
   const season = useGameStore((s) => s.season);
+  const signedInEmail = useAccount((s) => s.email);
+  const openAccount = useAccount((s) => s.openPanel);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -113,6 +117,11 @@ export function LaunchIntro({ onComplete }: { onComplete: () => void }) {
             <div className="launch-actions">
               <button type="button" className="launch-depart" onClick={depart}>出発する <span aria-hidden="true">↗</span></button>
               <button type="button" className="launch-guide-open" onClick={() => guideRef.current?.showModal()}>遊び方</button>
+              {supabase && (
+                <button type="button" className="launch-guide-open" onClick={() => openAccount()}>
+                  {signedInEmail ? `ログイン中：${signedInEmail}` : 'ログインして続きから遊ぶ'}
+                </button>
+              )}
               {returning && <button type="button" className="launch-skip" onClick={onComplete}>演出をスキップして釣りへ <span aria-hidden="true">→</span></button>}
               <p className="launch-duration">地球 → 天の川 · 約10秒の旅</p>
             </div>

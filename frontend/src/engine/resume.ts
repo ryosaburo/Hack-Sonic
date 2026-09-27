@@ -25,3 +25,7 @@ export function saveResume(state: ResumeState) {
     localStorage.setItem(RESUME_KEY, JSON.stringify(state));
   } catch { /* 保存できなくても今回の釣りは続けられる */ }
 }
+
+export function clearResume() {
+  try { localStorage.removeItem(RESUME_KEY); } catch { /* 消せなくても次の保存で上書きされる */ }
+}

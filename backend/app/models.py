@@ -33,6 +33,12 @@ class User(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     device_id: str = Field(index=True, unique=True)
+    # Supabase Auth のユーザーID（JWT の sub）。ログインするまでは NULL で、端末IDだけで識別する
+    auth_user_id: Optional[str] = Field(default=None, index=True, unique=True)
+    # 最後にいた釣り場の位置と季節。別の端末でログインしても続きから始められるようにする
+    resume_pan_x: Optional[float] = None
+    resume_pan_y: Optional[float] = None
+    resume_season: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
