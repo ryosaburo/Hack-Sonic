@@ -1,9 +1,11 @@
 import json
+import logging
 import os
+import time
 from datetime import date
 from pathlib import Path
 
-from sqlalchemy import inspect, text
+from sqlalchemy import event, inspect, text
 from sqlmodel import SQLModel, Session, create_engine, select
 from dotenv import load_dotenv
 
@@ -11,6 +13,10 @@ from .models import CatalogEntry, Collection
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+
+# 接続に失敗したときに、次に試すまで待つ秒数。合計はフロントの待ち時間（15秒）より短くする
+CONNECT_RETRY_DELAYS = (0.5, 1, 2, 4)
 
 
 def normalize_database_url(url: str) -> str:
@@ -37,6 +43,25 @@ else:
         pool_pre_ping=True,
         connect_args={"prepare_threshold": None},
     )
+
+
+# Supabase の接続プールは、正しい設定でも一時的に接続を断ることがある（tenant/user ... not found など）。
+# やり直すのは接続を開くところだけなので、SQLが二重に実行されることはない。
+def connect_with_retry(dialect, connection_record, cargs, cparams):
+    for delay in CONNECT_RETRY_DELAYS:
+        try:
+            return dialect.connect(*cargs, **cparams)
+        except dialect.loaded_dbapi.OperationalError as error:
+            # パスワード違いは待っても直らず、繰り返すと接続元がしばらく遮断される
+            if "password authentication failed" in str(error):
+                raise
+            logger.warning("Database connection failed; retrying in %ss: %s", delay, error)
+            time.sleep(delay)
+    return dialect.connect(*cargs, **cparams)
+
+
+if engine.dialect.name == "postgresql":
+    event.listen(engine, "do_connect", connect_with_retry)
 
 
 def get_session():
