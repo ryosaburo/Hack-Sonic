@@ -1,11 +1,16 @@
+import logging
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import OperationalError
 
 from .database import create_db_and_tables, sync_catalog_from_seed
 from .routers import account, cast, catalog, collection, economy
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -24,6 +29,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(OperationalError)
+def database_unavailable(request: Request, error: OperationalError):
+    # ここで応答を返すと自動ではログに残らないので、原因を追えるように記録する
+    logger.error("Database error on %s %s", request.method, request.url.path, exc_info=error)
+    return JSONResponse({"detail": "Database temporarily unavailable"}, status_code=503)
+
 
 app.include_router(catalog.router)
 app.include_router(collection.router)
